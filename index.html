@@ -44,6 +44,27 @@
         .btn-secondary {
             background: #6c757d;
         }
+
+        .button
+        {
+            padding: 10px 15px;
+            background: #1294b4;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+        .btn_1
+        {
+            padding: 10px 15px;
+            background: #ff0000;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
         label {
             display: block;
             margin-top: 10px;
@@ -123,10 +144,9 @@
             <label>Número del local:</label>
             <input type="text" id="numLocal" placeholder="Ingrese el número del módulo/local">
 
-            <p>En este ejemplo no cargamos productos aún; más adelante se agregan.</p>
 
             <button class="btn-secondary btn" onclick="prevStep(4)">Atrás</button>
-            <button class="btn" onclick="submitForm()">Enviar</button>
+            <button class="btn" onclick="submitForm()">Siguiente</button>
         </div>
 
         <!-- Paso 3-B: Local externo -->
@@ -137,7 +157,7 @@
             <p>Aquí más adelante añadiremos productos y precios.</p>
 
             <button class="btn-secondary btn" onclick="prevStep(3)">Atrás</button>
-            <button class="btn" onclick="submitForm()">Enviar</button>
+            <button class="btn" onclick="submitForm()">Siguiente</button>
         </div>
     </div>
 
@@ -234,22 +254,334 @@ function prevStep(step) {
     document.getElementById("step" + (step - 1)).classList.add("active");
 }
 
-/* --- Enviar --- */
+/* --- Ir a la pantalla de agregar productos --- */
 function submitForm() {
-    const data = {
-        fecha: document.getElementById("fecha").value,
-        localidad: document.getElementById("localidad").value,
-        plaza: document.getElementById("plaza").value,
-        tipoPunto: document.getElementById("tipoPunto").value,
-        tipoEncuesta: document.getElementById("tipoEncuesta").value || null,
-        localPlaza: document.getElementById("numLocal").value || null,
-        localExterno: document.getElementById("refLocalExterno").value || null
-    };
+    const localidad = document.getElementById("localidad").value;
+    const plaza = document.getElementById("plaza").value;
+    const numLocal = document.getElementById("numLocal").value;
 
-    console.log("Datos listos para enviar a Firebase:", data);
+    if (!numLocal) {
+        alert("Por favor ingrese el número del local.");
+        return;
+    }
+
+    // Ocultar el formulario principal
+    document.querySelector(".container").style.display = "none";
+
+    // Mostrar pantalla de agregar productos
+    document.getElementById("pantallaAgregarProductos").style.display = "block";
+
+    // Llenar encabezado
+    document.getElementById("infoLocalidad").textContent = localidad;
+    document.getElementById("infoPlaza").textContent = plaza;
+    document.getElementById("infoLocal").textContent = "Local " + numLocal;
+}
+
+</script>
+<div class="container">
+<!-- ==============================
+     PANTALLA AGREGAR PRODUCTOS
+================================= -->
+
+<div id="pantallaAgregarProductos" style="display:none; padding:20px;">
+
+    <!-- ENCABEZADO SUPERIOR -->
+    <div style="font-size:18px; font-weight:bold; margin-bottom:20px;">
+        <span id="infoLocalidad"></span>,
+        <span id="infoPlaza"></span> - 
+        <span id="infoLocal"></span>
+    </div>
+
+    <!-- BOTÓN PARA AGREGAR PRODUCTO -->
+    <center><button class="btn"onclick="abrirModalProducto()" 
+        style="padding:10px 20px; font-size:16px;">
+        Agregar producto
+    </button></center>
+
+<!-- TABLA DE PRODUCTOS -->
+<table id="tablaProductos" border="1" 
+       style="margin-top:20px; width:100%; border-collapse:collapse; display:none;">
+    <thead>
+        <tr style="background:#f0f0f0;">
+            <th>Grupo</th>
+            <th>Producto</th>
+            <th>Precio</th>
+            <th>Unidad</th>
+            <th>Canasta</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody id="tbodyProductos"></tbody>
+</table>
+
+<!-- BOTÓN ENVIAR -->
+<center><button class="button"id="btnEnviar" onclick="enviarFormulario()"
+        style="margin-top:20px; padding:12px 25px; font-size:16px; display:none;">
+    Enviar
+</button></center>
+
+</div>
+</div>
+<!-- ==============================
+     MODAL EMERGENTE
+================================= -->
+
+<style>
+.modalFondo {
+    display:none;
+    position:fixed;
+    top:0; left:0; right:0; bottom:0;
+    background:rgba(0,0,0,0.5);
+    justify-content:center;
+    align-items:center;
+    z-index:1000;
+}
+
+.modalContenido {
+    background:white;
+    padding:25px;
+    width:350px;
+    border-radius:10px;
+}
+</style>
+
+<div id="modalProducto" class="modalFondo">
+    <div class="modalContenido">
+
+        <h3 id="tituloModal">Agregar Producto</h3>
+
+        <input type="hidden" id="editIndex">
+
+        <!-- GRUPO ALIMENTARIO -->
+        <label>Grupo alimentario:</label>
+        <select id="grupoAlimentario" onchange="actualizarListaProductos()">
+            <option value="">Seleccione un grupo</option>
+            <option value="CARNICOS">CÁRNICOS</option>
+            <option value="CEREALES">CEREALES</option>
+            <option value="ENDULZANTES">ENDULZANTES</option>
+            <option value="FRUTAS">FRUTAS</option>
+            <option value="GRANOS">GRANOS</option>
+            <option value="GRASAS">GRASAS</option>
+            <option value="HIERBAS">HIERBAS</option>
+            <option value="HUEVOS">HUEVOS</option>
+            <option value="LACTEOS">LÁCTEOS</option>
+            <option value="PESCADO">PESCADO</option>
+            <option value="PLATANO">PLÁTANO</option>
+            <option value="POLLO">POLLO</option>
+            <option value="TUBERCULOS">TUBÉRCULOS</option>
+            <option value="VERDURAS">VERDURAS</option>
+            <option value="OTROS">OTROS</option>
+        </select>
+
+        <br>
+
+        <!-- PRODUCTOS DEPENDIENTES -->
+        <label>Producto:</label>
+        <select id="producto">
+            <option value="">Seleccione un producto</option>
+        </select>
+        <p id="avisoCanasta" style="display:none; font-weight:bold; margin-top:5px;"></p>
+
+        <!-- PRECIO -->
+        <label>Precio de venta:</label>
+        <input type="number" id="precioVenta" placeholder="Ej: 3500" min="0" 
+            style="width:100%; padding:6px;">
+
+        <!-- UNIDAD -->
+        <label>Unidad de empaque:</label>
+        <select id="unidadEmpaque" style="width:100%; padding:6px;">
+            <option value="">Seleccione una unidad</option>
+            <option value="ATADO">ATADO</option>
+            <option value="BANDEJA">BANDEJA</option>
+            <option value="BLOQUE">BLOQUE</option>
+            <option value="BOLSA">BOLSA</option>
+            <option value="BOTELLA">BOTELLA</option>
+            <option value="BULTO">BULTO</option>
+            <option value="CAJA">CAJA</option>
+            <option value="CANAL">CANAL</option>
+            <option value="CANASTA">CANASTA</option>
+            <option value="GUACAL">GUACAL</option>
+            <option value="RUEDA">RUEDA</option>
+        </select>
+
+        <br><br>
+
+        <!-- BOTONES -->
+        <center><button class="btn" onclick="guardarProducto()">Guardar</button>
+        <button class="btn_1" onclick="cerrarModalProducto()">Cancelar</button>
+    </center>
+    </div>
+</div>
+
+<!-- ==============================
+     JAVASCRIPT
+================================= -->
+
+<script>
+
+let listaProductos = []; // AQUÍ SE GUARDAN LOS PRODUCTOS
+
+/* PRODUCTOS CANASTA */
+const productosCanasta = [
+    "CAFÉ", "CHOCOLATE", "PASTA", "HARINA", "MOJARRA", "GENERAL",
+    "PECHUGA", "TOMATE", "ZANAHORIA", "CEBOLLA LARGA", "CILANTRO",
+    "YUCA", "PAPA", "HUEVOS", "LECHE", "QUESO", "ACEITE",
+    "LENTEJAS", "FRIJOL", "NARANJA", "PAPAYA", "BANANO",
+    "SAL", "PANELA", "AZUCAR", "ARROZ", "LOMO", "CHATAS"
+];
+
+/* PRODUCTOS POR GRUPO */
+const productosPorGrupo = {
+    CARNICOS: ["CADERA", "CANAL", "CHATAS", "COSTILLA", "FALDA", "LOMO", "PIERNA", "SOBREBARRIGA"],
+    CEREALES: ["ARROZ", "TRIGO", "AVENA"],
+    ENDULZANTES: ["SAL", "PANELA", "AZUCAR"],
+    FRUTAS: ["AGUACATE", "AGUACATE HASS", "BANANO", "CURUBA", "DURAZNO", "FRESA", "GRANADILLA", "GUANÁBANA", "GUAYABA",
+             "LIMÓN", "MANDARINA", "MANGO", "MORA", "PAPAYA", "PIÑA", "PERA", "UVA", "NARANJA"],
+    GRANOS: ["GARBANZO", "LENTEJAS", "FRIJOL", "MAIZ", "ARROZ", "AVENA"],
+    GRASAS: ["ACEITE", "MANTEQUILLA"],
+    HIERBAS: ["NO APLICA"],
+    HUEVOS: ["NO APLICA"],
+    LACTEOS: ["LECHE", "QUESO", "YOGURTH", "CUAJADA"],
+    PESCADO: ["MOJARRA"],
+    PLATANO: ["GENERAL"],
+    POLLO: ["PECHUGA"],
+    TUBERCULOS: ["ARRACACHA", "PAPA", "YUCA"],
+    VERDURAS: ["ACELGA", "AHUYAMA", "AJO", "APIO", "ARVEJA VERDE", "BRÓCOLI", "CALABACÍN", "CEBOLLA CABEZONA",
+               "CEBOLLA LARGA", "CILANTRO", "COLIFLOR", "ESPINACA", "HABICHUELA", "LECHUGA", "PEPINO COHOMBRO",
+               "PIMENTÓN", "REMOLACHA", "TOMATE", "ZANAHORIA"],
+    OTROS: ["CAFÉ", "CHOCOLATE", "PASTA", "HARINA"]
+};
+
+/* ABRIR MODAL */
+function abrirModalProducto() {
+    document.getElementById("modalProducto").style.display = "flex";
+    document.getElementById("tituloModal").textContent = "Agregar Producto";
+    document.getElementById("editIndex").value = "";
+}
+
+/* CERRAR MODAL */
+function cerrarModalProducto() {
+    document.getElementById("modalProducto").style.display = "none";
+}
+
+/* ACTUALIZAR PRODUCTOS POR GRUPO */
+function actualizarListaProductos() {
+    const grupo = document.getElementById("grupoAlimentario").value;
+    const selectProducto = document.getElementById("producto");
+
+    selectProducto.innerHTML = `<option value="">Seleccione un producto</option>`;
+
+    if (grupo && productosPorGrupo[grupo]) {
+        productosPorGrupo[grupo].forEach(p => {
+            const opt = document.createElement("option");
+            opt.value = p;
+            opt.textContent = p;
+            selectProducto.appendChild(opt);
+        });
+    }
+}
+
+/* MOSTRAR SI ES CANASTA */
+document.getElementById("producto").addEventListener("change", function () {
+    const aviso = document.getElementById("avisoCanasta");
+    const producto = this.value;
+
+    if (productosCanasta.includes(producto.toUpperCase())) {
+        aviso.textContent = "✓ Pertenece a la canasta familiar";
+        aviso.style.color = "red";
+        aviso.style.display = "block";
+    } else {
+        aviso.style.display = "none";
+    }
+});
+
+/* GUARDAR PRODUCTO */
+function guardarProducto() {
+    let grupo = document.getElementById("grupoAlimentario").value;
+    let producto = document.getElementById("producto").value;
+    let precio = document.getElementById("precioVenta").value;
+    let unidad = document.getElementById("unidadEmpaque").value;
+    let editIndex = document.getElementById("editIndex").value;
+
+    if (!grupo || !producto || !precio || !unidad) {
+        alert("Por favor complete todos los campos.");
+        return;
+    }
+
+    let canasta = productosCanasta.includes(producto.toUpperCase()) ? "Sí" : "N/A";
+
+    let obj = { grupo, producto, precio, unidad, canasta };
+
+    if (editIndex === "") {
+        listaProductos.push(obj); // AGREGAR
+    } else {
+        listaProductos[editIndex] = obj; // EDITAR
+    }
+
+    mostrarTabla();
+    cerrarModalProducto();
+}
+
+/* MOSTRAR TABLA */
+function mostrarTabla() {
+    const tabla = document.getElementById("tablaProductos");
+    const tbody = document.getElementById("tbodyProductos");
+    const btnEnviar = document.getElementById("btnEnviar");
+
+    tbody.innerHTML = "";
+
+    listaProductos.forEach((p, index) => {
+        let fila = `
+        <tr>
+            <td>${p.grupo}</td>
+            <td>${p.producto}</td>
+            <td>${p.precio}</td>
+            <td>${p.unidad}</td>
+            <td>${p.canasta}</td>
+            <td>
+               <center> <button class="btn" onclick="editarProducto(${index})">Editar</button>
+                <button class="btn_1"  onclick="eliminarProducto(${index})">Eliminar</button></center>
+            </td>
+        </tr>`;
+        tbody.innerHTML += fila;
+    });
+
+    tabla.style.display = listaProductos.length > 0 ? "table" : "none";
+    btnEnviar.style.display = listaProductos.length > 0 ? "inline-block" : "none";
+}
+
+/* EDITAR */
+function editarProducto(i) {
+    let p = listaProductos[i];
+
+    document.getElementById("grupoAlimentario").value = p.grupo;
+    actualizarListaProductos();
+    document.getElementById("producto").value = p.producto;
+    document.getElementById("precioVenta").value = p.precio;
+    document.getElementById("unidadEmpaque").value = p.unidad;
+
+    document.getElementById("editIndex").value = i;
+    document.getElementById("tituloModal").textContent = "Editar Producto";
+
+    abrirModalProducto();
+}
+
+/* ELIMINAR */
+function eliminarProducto(i) {
+    if (confirm("¿Seguro que quieres eliminar este producto?")) {
+        listaProductos.splice(i, 1);
+        mostrarTabla();
+    }
+}
+
+/* ENVIAR FORMULARIO */
+function enviarFormulario() {
     alert("Formulario enviado (simulación). Listo para conectar con Firebase.");
 }
+
 </script>
 
 </body>
 </html>
+
+
