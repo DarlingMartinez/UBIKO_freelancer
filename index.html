@@ -178,18 +178,34 @@ const plazasPorLocalidad = {
     "MÁRTIRES": ["PDM SAMPER MENDOZA"]
 };
 
-/* --- Cargar plazas dinámicamente --- */
 function cargarPlazas() {
     const localidad = document.getElementById("localidad").value;
     const plazaSelect = document.getElementById("plaza");
 
+    // Limpiar todas las opciones anteriores
     plazaSelect.innerHTML = "";
 
+    // Siempre agregar la opción por defecto primero
+    const opcionPorDefecto = document.createElement("option");
+    opcionPorDefecto.value = "";
+    opcionPorDefecto.textContent = "Seleccione una plaza";
+    opcionPorDefecto.selected = true;
+    opcionPorDefecto.disabled = true;
+    plazaSelect.appendChild(opcionPorDefecto);
+
+    // Si no hay localidad seleccionada, mostrar mensaje diferente
     if (!localidad) {
-        plazaSelect.innerHTML = `<option value="">Seleccione una localidad primero...</option>`;
+        plazaSelect.innerHTML = ""; // Limpiar nuevamente
+        const opcionVacia = document.createElement("option");
+        opcionVacia.value = "";
+        opcionVacia.textContent = "Seleccione una localidad primero...";
+        opcionVacia.selected = true;
+        opcionVacia.disabled = true;
+        plazaSelect.appendChild(opcionVacia);
         return;
     }
 
+    // Cargar las plazas de la localidad seleccionada
     plazasPorLocalidad[localidad].forEach(plaza => {
         const option = document.createElement("option");
         option.value = plaza;
@@ -197,8 +213,6 @@ function cargarPlazas() {
         plazaSelect.appendChild(option);
     });
 }
-
-/* --- Control de pasos --- */
 /* --- Control de pasos --- */
 function nextStep(step) {
 
