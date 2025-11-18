@@ -68,10 +68,26 @@
             <input type="date" id="fecha">
 
             <label>Localidad:</label>
-            <input type="text" id="localidad" placeholder="Ingrese la localidad">
+            <select id="localidad" onchange="cargarPlazas()">
+                <option value="">Seleccione localidad...</option>
+                <option value="TUNJUELITO">TUNJUELITO</option>
+                <option value="ANTONIO NARIÑO">ANTONIO NARIÑO</option>
+                <option value="PUENTE ARANDA">PUENTE ARANDA</option>
+                <option value="SAN CRISTOBAL">SAN CRISTOBAL</option>
+                <option value="ENGATIVÁ">ENGATIVÁ</option>
+                <option value="KENNEDY">KENNEDY</option>
+                <option value="SANTAFÉ">SANTAFÉ</option>
+                <option value="FONTIBÓN">FONTIBÓN</option>
+                <option value="BARRIOS UNIDOS">BARRIOS UNIDOS</option>
+                <option value="LA CANDELARIA">LA CANDELARIA</option>
+                <option value="CIUDAD BOLÍVAR">CIUDAD BOLÍVAR</option>
+                <option value="MÁRTIRES">MÁRTIRES</option>
+            </select>
 
             <label>Plaza:</label>
-            <input type="text" id="plaza" placeholder="Ingrese la plaza">
+            <select id="plaza">
+                <option value="">Seleccione una localidad primero...</option>
+            </select>
 
             <button class="btn" onclick="nextStep(1)">Siguiente</button>
         </div>
@@ -89,14 +105,27 @@
             <button class="btn" onclick="nextStep(2)">Siguiente</button>
         </div>
 
-        <!-- Paso 3-A: Local dentro de la plaza -->
+        <!-- Paso 3-A: Tipo de encuesta -->
+        <div class="step" id="step3_tipoEncuesta">
+            <label>Seleccione el tipo de encuesta:</label>
+            <select id="tipoEncuesta">
+                <option value="">Seleccione...</option>
+                <option value="abastecimiento">Abastecimiento (Cantidades)</option>
+                <option value="comparativo">Comparativo de precios</option>
+            </select>
+
+            <button class="btn-secondary btn" onclick="prevStep(3)">Atrás</button>
+            <button class="btn" onclick="nextTipoEncuesta()">Siguiente</button>
+        </div>
+
+        <!-- Paso 4-A: Local dentro de la plaza -->
         <div class="step" id="step3_plaza">
             <label>Número del local:</label>
             <input type="text" id="numLocal" placeholder="Ingrese el número del módulo/local">
 
             <p>En este ejemplo no cargamos productos aún; más adelante se agregan.</p>
 
-            <button class="btn-secondary btn" onclick="prevStep(3)">Atrás</button>
+            <button class="btn-secondary btn" onclick="prevStep(4)">Atrás</button>
             <button class="btn" onclick="submitForm()">Enviar</button>
         </div>
 
@@ -112,49 +141,115 @@
         </div>
     </div>
 
-    <script>
-        let currentStep = 1;
+<script>
+/* --- Plazas por localidad --- */
+const plazasPorLocalidad = {
+    "TUNJUELITO": ["PDM EL CARMEN", "PDM SAN BENITO", "PDM SAN CARLOS"],
+    "ANTONIO NARIÑO": ["PDM CARLOS RESTREPO", "PDM SANTANDER"],
+    "PUENTE ARANDA": ["PDM TRINIDAD GALAN"],
+    "SAN CRISTOBAL": ["PDM 20 DE JULIO"],
+    "ENGATIVÁ": ["PDM LAS FERIAS", "PDM QUIRIGUA"],
+    "KENNEDY": ["PDM KENNEDY"],
+    "SANTAFÉ": ["PDM LAS CRUCES", "PDM PERSEVERANCIA"],
+    "FONTIBÓN": ["PDM FONTIBON"],
+    "BARRIOS UNIDOS": ["PDM SIETE DE AGOSTO", "PDM DOCE DE OCTUBRE"],
+    "LA CANDELARIA": ["PDM LA CONCORDIA"],
+    "CIUDAD BOLÍVAR": ["PDM LOS LUCEROS"],
+    "MÁRTIRES": ["PDM SAMPER MENDOZA"]
+};
 
-        function nextStep(step) {
-            if (step === 2) {
-                const tipo = document.getElementById("tipoPunto").value;
-                if (!tipo) { alert("Seleccione un tipo de punto."); return; }
-                document.getElementById("step2").classList.remove("active");
-                if (tipo === "plaza") {
-                    document.getElementById("step3_plaza").classList.add("active");
-                } else {
-                    document.getElementById("step3_externo").classList.add("active");
-                }
-            } else {
-                document.getElementById("step" + step).classList.remove("active");
-                document.getElementById("step" + (step + 1)).classList.add("active");
-            }
+/* --- Cargar plazas dinámicamente --- */
+function cargarPlazas() {
+    const localidad = document.getElementById("localidad").value;
+    const plazaSelect = document.getElementById("plaza");
+
+    plazaSelect.innerHTML = "";
+
+    if (!localidad) {
+        plazaSelect.innerHTML = `<option value="">Seleccione una localidad primero...</option>`;
+        return;
+    }
+
+    plazasPorLocalidad[localidad].forEach(plaza => {
+        const option = document.createElement("option");
+        option.value = plaza;
+        option.textContent = plaza;
+        plazaSelect.appendChild(option);
+    });
+}
+
+/* --- Control de pasos --- */
+function nextStep(step) {
+
+    if (step === 2) {
+        const tipo = document.getElementById("tipoPunto").value;
+        if (!tipo) { alert("Seleccione un tipo de punto."); return; }
+
+        document.getElementById("step2").classList.remove("active");
+
+        if (tipo === "plaza") {
+            document.getElementById("step3_tipoEncuesta").classList.add("active");
+        } else {
+            document.getElementById("step3_externo").classList.add("active");
         }
+        return;
+    }
 
-        function prevStep(step) {
-            if (step === 3) {
-                document.getElementById("step2").classList.add("active");
-                document.getElementById("step3_plaza").classList.remove("active");
-                document.getElementById("step3_externo").classList.remove("active");
-            } else {
-                document.getElementById("step" + step).classList.remove("active");
-                document.getElementById("step" + (step - 1)).classList.add("active");
-            }
-        }
+    document.getElementById("step" + step).classList.remove("active");
+    document.getElementById("step" + (step + 1)).classList.add("active");
+}
 
-        function submitForm() {
-            const data = {
-                fecha: document.getElementById("fecha").value,
-                localidad: document.getElementById("localidad").value,
-                plaza: document.getElementById("plaza").value,
-                tipoPunto: document.getElementById("tipoPunto").value,
-                localPlaza: document.getElementById("numLocal").value || null,
-                localExterno: document.getElementById("refLocalExterno").value || null
-            };
+/* --- Paso después del tipo de encuesta --- */
+function nextTipoEncuesta() {
+    const tipo = document.getElementById("tipoEncuesta").value;
 
-            console.log("Datos listos para enviar a Firebase:", data);
-            alert("Formulario enviado (simulación). Listo para conectar con Firebase.");
-        }
-    </script>
+    if (!tipo) {
+        alert("Seleccione un tipo de encuesta.");
+        return;
+    }
+
+    document.getElementById("step3_tipoEncuesta").classList.remove("active");
+
+    // Por ahora ambas opciones llevan al mismo step
+    document.getElementById("step3_plaza").classList.add("active");
+}
+
+/* --- Botón Atrás --- */
+function prevStep(step) {
+    if (step === 3) {
+        document.getElementById("step2").classList.add("active");
+        document.getElementById("step3_tipoEncuesta").classList.remove("active");
+        document.getElementById("step3_plaza").classList.remove("active");
+        document.getElementById("step3_externo").classList.remove("active");
+        return;
+    }
+
+    if (step === 4) {
+        document.getElementById("step3_tipoEncuesta").classList.add("active");
+        document.getElementById("step3_plaza").classList.remove("active");
+        return;
+    }
+
+    document.getElementById("step" + step).classList.remove("active");
+    document.getElementById("step" + (step - 1)).classList.add("active");
+}
+
+/* --- Enviar --- */
+function submitForm() {
+    const data = {
+        fecha: document.getElementById("fecha").value,
+        localidad: document.getElementById("localidad").value,
+        plaza: document.getElementById("plaza").value,
+        tipoPunto: document.getElementById("tipoPunto").value,
+        tipoEncuesta: document.getElementById("tipoEncuesta").value || null,
+        localPlaza: document.getElementById("numLocal").value || null,
+        localExterno: document.getElementById("refLocalExterno").value || null
+    };
+
+    console.log("Datos listos para enviar a Firebase:", data);
+    alert("Formulario enviado (simulación). Listo para conectar con Firebase.");
+}
+</script>
+
 </body>
 </html>
