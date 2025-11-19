@@ -217,6 +217,8 @@
             <button class="button" id="btnEnviar" onclick="enviarFormulario()" style="margin-top:20px; padding:12px 25px; font-size:16px; display:none;">
                 Enviar
             </button>
+                        <button class="btn-secondary btn" onclick="backToStep2()">Atrás</button>
+
         </center>
 
     </div>
@@ -369,6 +371,17 @@
     </div>
 
     <script>
+        function backToStep2() {
+    // Oculta la pantalla de agregar productos
+    document.getElementById("pantallaAgregarProductos").style.display = "none";
+
+    // Muestra de nuevo el contenedor principal del formulario
+    document.getElementById("mainFormContainer").style.display = "block";
+
+    // Muestra el Paso 2 (y oculta el Paso 1 si estaba activo)
+    document.getElementById("step2").classList.add("active");
+    document.getElementById("step1").classList.remove("active");
+}
         /* --- CONSTANTES --- */
         const plazasPorLocalidad = {
             "TUNJUELITO": ["PDM EL CARMEN", "PDM SAN BENITO", "PDM SAN CARLOS"],
