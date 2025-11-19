@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formulario de Encuesta</title>
+    <title>Formulario de Encuesta - Abastecimiento</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -37,6 +37,7 @@
             cursor: pointer;
             border-radius: 5px;
             margin-top: 15px;
+            margin-right: 10px; /* Para separar botones */
         }
         .btn:disabled {
             background: gray;
@@ -45,8 +46,7 @@
             background: #6c757d;
         }
 
-        .button
-        {
+        .button {
             padding: 10px 15px;
             background: #1294b4;
             color: white;
@@ -55,8 +55,7 @@
             border-radius: 5px;
             margin-top: 15px;
         }
-        .btn_1
-        {
+        .btn_1 {
             padding: 10px 15px;
             background: #ff0000;
             color: white;
@@ -76,15 +75,61 @@
             margin-top: 5px;
             border: 1px solid #ccc;
             border-radius: 5px;
+            box-sizing: border-box; /* Asegura que el padding no cambie el ancho */
+        }
+
+        /* Estilos para el modal */
+        .modalFondo {
+            display:none;
+            position:fixed;
+            top:0; left:0; right:0; bottom:0;
+            background:rgba(0,0,0,0.5);
+            justify-content:center;
+            align-items:center;
+            z-index:1000;
+        }
+
+        .modalContenido {
+            background:white;
+            padding:25px;
+            width:350px;
+            border-radius:10px;
+            max-height: 90vh; /* Para que quepa en pantallas pequeñas */
+            overflow-y: auto; /* Scroll dentro del modal */
+        }
+
+        /* Estilos para la tabla */
+        #tablaProductos th, #tablaProductos td {
+            padding: 8px;
+            text-align: left;
+            border: 1px solid #ddd;
+            font-size: 12px; /* Reducir fuente de la tabla para más columnas */
+        }
+        #tablaProductos th {
+            background-color: #f2f2f2;
         }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="container" id="mainFormContainer">
         <h2>Formulario de Encuesta</h2>
 
-        <!-- Paso 1: Datos iniciales -->
         <div class="step active" id="step1">
+            <label>Encuestador:</label>
+            <select id="encuestador">
+                <option value="">Seleccione encuestador...</option>
+                <option value="1">Encuestador 1</option>
+                <option value="2">Encuestador 2</option>
+                <option value="3">Encuestador 3</option>
+                <option value="4">Encuestador 4</option>
+                <option value="5">Encuestador 5</option>
+                <option value="6">Encuestador 6</option>
+                <option value="7">Encuestador 7</option>
+                <option value="8">Encuestador 8</option>
+                <option value="9">Encuestador 9</option>
+                <option value="10">Encuestador 10</option>
+            </select>
+
             <label>Fecha:</label>
             <input type="date" id="fecha">
 
@@ -113,542 +158,600 @@
             <button class="btn" onclick="nextStep(1)">Siguiente</button>
         </div>
 
-        <!-- Paso 2: Tipo de punto encuestado -->
         <div class="step" id="step2">
             <label>Seleccione el tipo de punto a encuestar:</label>
             <select id="tipoPunto">
                 <option value="">Seleccione...</option>
-                <option value="plaza">Módulo / Local dentro de la plaza</option>
+                <option value="plaza">Local dentro de la plaza</option>
                 <option value="externo">Local externo</option>
             </select>
 
+            <div id="campoNumLocal" style="display:none;">
+                <label>Número del local (dentro de la plaza):</label>
+                <input type="text" id="numLocal" placeholder="Ingrese el número del módulo/local">
+            </div>
+
+            <div id="campoRefLocalExterno" style="display:none;">
+                <label>Nombre o dirección del local externo:</label>
+                <input type="text" id="refLocalExterno" placeholder="Ingrese nombre o dirección">
+            </div>
+
             <button class="btn-secondary btn" onclick="prevStep(2)">Atrás</button>
-            <button class="btn" onclick="nextStep(2)">Siguiente</button>
+            <button class="btn" onclick="goToProductsScreen()">Siguiente</button>
+        </div>
+    </div>
+
+
+    <div class="container" id="pantallaAgregarProductos" style="display:none;">
+
+        <div style="font-size:16px; font-weight:bold; margin-bottom:20px; border-bottom: 1px solid #ccc; padding-bottom: 10px;">
+            <p style="margin: 0;"><span id="infoEncuestador"></span> - <span id="infoFecha"></span></p>
+            <p style="margin: 5px 0 0 0;"><span id="infoLocalidad"></span>, <span id="infoPlaza"></span></p>
+            <p style="margin: 5px 0 0 0;">Punto: <span id="infoPunto"></span></p>
         </div>
 
-        <!-- Paso 3-A: Tipo de encuesta -->
-        <div class="step" id="step3_tipoEncuesta">
-            <label>Seleccione el tipo de encuesta:</label>
-            <select id="tipoEncuesta">
-                <option value="">Seleccione...</option>
-                <option value="abastecimiento">Abastecimiento (Cantidades)</option>
-                <option value="comparativo">Comparativo de precios</option>
+        <center>
+            <button class="btn" onclick="abrirModalProducto('new')" style="padding:10px 20px; font-size:16px;">
+                + Agregar producto
+            </button>
+        </center>
+
+        <table id="tablaProductos" border="1" style="margin-top:20px; width:100%; border-collapse:collapse; display:none;">
+            <thead>
+                <tr style="background:#f0f0f0;">
+                    <th>Grupo</th>
+                    <th>Producto</th>
+                    <th>Canasta</th>
+                    <th>Precio / Peso</th>
+                    <th>Unidad</th>
+                    <th>Cantidad</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tbodyProductos"></tbody>
+        </table>
+
+        <center>
+            <button class="btn_1" onclick="cancelarEncuesta()" style="margin-top:20px; padding:12px 25px; font-size:16px;">
+                Cancelar
+            </button>
+            <button class="button" id="btnEnviar" onclick="enviarFormulario()" style="margin-top:20px; padding:12px 25px; font-size:16px; display:none;">
+                Enviar
+            </button>
+        </center>
+
+    </div>
+
+
+    <div id="modalProducto" class="modalFondo">
+        <div class="modalContenido">
+
+            <h3 id="tituloModal">Agregar Producto</h3>
+
+            <input type="hidden" id="editIndex">
+
+            <label>Grupo alimentario:</label>
+            <select id="grupoAlimentario" onchange="actualizarListaProductos()">
+                <option value="">Seleccione un grupo</option>
+                <option value="CARNICOS">CÁRNICOS</option>
+                <option value="CEREALES">CEREALES</option>
+                <option value="ENDULZANTES">ENDULZANTES</option>
+                <option value="FRUTAS">FRUTAS</option>
+                <option value="GRANOS">GRANOS</option>
+                <option value="GRASAS">GRASAS</option>
+                <option value="HIERBAS">HIERBAS</option>
+                <option value="HUEVOS">HUEVOS</option>
+                <option value="LACTEOS">LÁCTEOS</option>
+                <option value="PESCADO">PESCADO</option>
+                <option value="PLATANO">PLÁTANO</option>
+                <option value="POLLO">POLLO</option>
+                <option value="TUBERCULOS">TUBÉRCULOS</option>
+                <option value="VERDURAS">VERDURAS</option>
+                <option value="OTROS">OTROS</option>
             </select>
 
-            <button class="btn-secondary btn" onclick="prevStep(3)">Atrás</button>
-            <button class="btn" onclick="nextTipoEncuesta()">Siguiente</button>
-        </div>
+            <br>
 
-        <!-- Paso 4-A: Local dentro de la plaza -->
-        <div class="step" id="step3_plaza">
-            <label>Número del local:</label>
-            <input type="text" id="numLocal" placeholder="Ingrese el número del módulo/local">
+            <label>Producto:</label>
+            <select id="producto">
+                <option value="">Seleccione un producto</option>
+            </select>
+            <p id="avisoCanasta" style="display:none; font-weight:bold; margin-top:5px; color:red;"></p>
 
+            <div id="camposLocalPlaza" style="display:none;">
+                <label>Peso (libras):</label>
+                <input type="number" id="pesoLibras" placeholder="Ej: 5" min="0" step="any" style="width:100%; padding:6px;">
 
-            <button class="btn-secondary btn" onclick="prevStep(4)">Atrás</button>
-            <button class="btn" onclick="submitForm()">Siguiente</button>
-        </div>
+                <label>Unidad de medida (Kg, Lb, Unit):</label>
+                <select id="unidadMedida" style="width:100%; padding:6px;">
+                    <option value="">Seleccione unidad de medida</option>
+                    <option value="Kg">Kilogramos</option>
+                    <option value="Lb">Libras</option>
+                    <option value="Unit">Unidad</option>
+                </select>
 
-        <!-- Paso 3-B: Local externo -->
-        <div class="step" id="step3_externo">
-            <label>Nombre o referencia del local externo:</label>
-            <input type="text" id="refLocalExterno" placeholder="Ingrese referencia del local">
+                <label>Cantidad:</label>
+                <input type="number" id="cantidad" placeholder="Ej: 10" min="1" style="width:100%; padding:6px;">
 
-            <p>Aquí más adelante añadiremos productos y precios.</p>
+                <label>Frecuencia de compra:</label>
+                <select id="frecuenciaCompra" style="width:100%; padding:6px;">
+                    <option value="">Seleccione frecuencia</option>
+                    <option value="Diaria">Diaria</option>
+                    <option value="Semanal">Semanal</option>
+                    <option value="Quincenal">Quincenal</option>
+                    <option value="Mensual">Mensual</option>
+                </select>
 
-            <button class="btn-secondary btn" onclick="prevStep(3)">Atrás</button>
-            <button class="btn" onclick="submitForm()">Siguiente</button>
+                <div id="camposCanastaPlaza" style="display:none;">
+                    <h4 style="border-top: 1px solid #ccc; padding-top: 10px; margin-top: 15px;">Datos adicionales de productos de la canasta familiar</h4>
+                    <label>Precio de venta:</label>
+                    <input type="number" id="precioVentaCanasta" placeholder="Ej: 3500" min="0" style="width:100%; padding:6px;">
+
+                    <label>Unidad de empaque:</label>
+                    <select id="unidadEmpaqueCanasta" style="width:100%; padding:6px;">
+                        <option value="">Seleccione una unidad de empaque</option>
+                        <option value="ATADO">ATADO</option>
+                        <option value="BANDEJA">BANDEJA</option>
+                        <option value="BULTO">BULTO</option>
+                        <option value="CAJA">CAJA</option>
+                        <option value="CANASTA">CANASTA</option>
+                        <option value="GUACAL">GUACAL</option>
+                        <option value="BOLSA">BOLSA</option>
+                        <option value="BOTELLA">BOTELLA</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="camposLocalExterno" style="display:none;">
+                <label>Precio de venta:</label>
+                <input type="number" id="precioVentaExterno" placeholder="Ej: 3500" min="0" style="width:100%; padding:6px;">
+
+                <label>Unidad de medida (Kg, Lb, Unit):</label>
+                <select id="unidadMedidaExterno" style="width:100%; padding:6px;">
+                    <option value="">Seleccione unidad de medida</option>
+                    <option value="Kg">Kilogramos</option>
+                    <option value="Lb">Libras</option>
+                    <option value="Unit">Unidad</option>
+                </select>
+
+                <label>Unidad de empaque:</label>
+                <select id="unidadEmpaqueExterno" style="width:100%; padding:6px;">
+                    <option value="">Seleccione una unidad de empaque</option>
+                    <option value="ATADO">ATADO</option>
+                    <option value="BANDEJA">BANDEJA</option>
+                    <option value="BULTO">BULTO</option>
+                    <option value="CAJA">CAJA</option>
+                    <option value="CANASTA">CANASTA</option>
+                    <option value="GUACAL">GUACAL</option>
+                    <option value="BOLSA">BOLSA</option>
+                    <option value="BOTELLA">BOTELLA</option>
+                </select>
+            </div>
+
+            <br><br>
+
+            <center>
+                <button class="btn" onclick="guardarProducto()">Guardar</button>
+                <button class="btn_1" onclick="cerrarModalProducto()">Cancelar</button>
+            </center>
         </div>
     </div>
 
-<script>
-/* --- Plazas por localidad --- */
-const plazasPorLocalidad = {
-    "TUNJUELITO": ["PDM EL CARMEN", "PDM SAN BENITO", "PDM SAN CARLOS"],
-    "ANTONIO NARIÑO": ["PDM CARLOS RESTREPO", "PDM SANTANDER"],
-    "PUENTE ARANDA": ["PDM TRINIDAD GALAN"],
-    "SAN CRISTOBAL": ["PDM 20 DE JULIO"],
-    "ENGATIVÁ": ["PDM LAS FERIAS", "PDM QUIRIGUA"],
-    "KENNEDY": ["PDM KENNEDY"],
-    "SANTAFÉ": ["PDM LAS CRUCES", "PDM PERSEVERANCIA"],
-    "FONTIBÓN": ["PDM FONTIBON"],
-    "BARRIOS UNIDOS": ["PDM SIETE DE AGOSTO", "PDM DOCE DE OCTUBRE"],
-    "LA CANDELARIA": ["PDM LA CONCORDIA"],
-    "CIUDAD BOLÍVAR": ["PDM LOS LUCEROS"],
-    "MÁRTIRES": ["PDM SAMPER MENDOZA"]
-};
+    <script>
+        /* --- CONSTANTES --- */
+        const plazasPorLocalidad = {
+            "TUNJUELITO": ["PDM EL CARMEN", "PDM SAN BENITO", "PDM SAN CARLOS"],
+            "ANTONIO NARIÑO": ["PDM CARLOS RESTREPO", "PDM SANTANDER"],
+            "PUENTE ARANDA": ["PDM TRINIDAD GALAN"],
+            "SAN CRISTOBAL": ["PDM 20 DE JULIO"],
+            "ENGATIVÁ": ["PDM LAS FERIAS", "PDM QUIRIGUA"],
+            "KENNEDY": ["PDM KENNEDY"],
+            "SANTAFÉ": ["PDM LAS CRUCES", "PDM PERSEVERANCIA"],
+            "FONTIBÓN": ["PDM FONTIBON"],
+            "BARRIOS UNIDOS": ["PDM SIETE DE AGOSTO", "PDM DOCE DE OCTUBRE"],
+            "LA CANDELARIA": ["PDM LA CONCORDIA"],
+            "CIUDAD BOLÍVAR": ["PDM LOS LUCEROS"],
+            "MÁRTIRES": ["PDM SAMPER MENDOZA"]
+        };
 
-function cargarPlazas() {
-    const localidad = document.getElementById("localidad").value;
-    const plazaSelect = document.getElementById("plaza");
+        const productosCanasta = [
+            "CAFÉ", "CHOCOLATE", "PASTA", "HARINA", "MOJARRA", "GENERAL", "PECHUGA", "TOMATE",
+            "ZANAHORIA", "CEBOLLA LARGA", "CILANTRO", "YUCA", "PAPA", "HUEVOS", "LECHE", "QUESO",
+            "ACEITE", "LENTEJAS", "FRIJOL", "NARANJA", "PAPAYA", "BANANO", "SAL", "PANELA",
+            "AZUCAR", "ARROZ", "LOMO", "CHATAS"
+        ];
 
-    // Limpiar todas las opciones anteriores
-    plazaSelect.innerHTML = "";
+        const productosPorGrupo = {
+            CARNICOS: ["CADERA", "CANAL", "CHATAS", "COSTILLA", "FALDA", "LOMO", "PIERNA", "SOBREBARRIGA"],
+            CEREALES: ["ARROZ", "TRIGO", "AVENA"],
+            ENDULZANTES: ["SAL", "PANELA", "AZUCAR"],
+            FRUTAS: ["AGUACATE", "AGUACATE HASS", "BANANO", "CURUBA", "DURAZNO", "FRESA", "GRANADILLA", "GUANÁBANA", "GUAYABA",
+                        "LIMÓN", "MANDARINA", "MANGO", "MORA", "PAPAYA", "PIÑA", "PERA", "UVA", "NARANJA"],
+            GRANOS: ["GARBANZO", "LENTEJAS", "FRIJOL", "MAIZ"],
+            GRASAS: ["ACEITE", "MANTEQUILLA"],
+            HIERBAS: ["CILANTRO"],
+            HUEVOS: ["HUEVOS"],
+            LACTEOS: ["LECHE", "QUESO", "YOGURTH", "CUAJADA"],
+            PESCADO: ["MOJARRA"],
+            PLATANO: ["GENERAL"],
+            POLLO: ["PECHUGA"],
+            TUBERCULOS: ["ARRACACHA", "PAPA", "YUCA"],
+            VERDURAS: ["ACELGA", "AHUYAMA", "AJO", "APIO", "ARVEJA VERDE", "BRÓCOLI", "CALABACÍN", "CEBOLLA CABEZONA",
+                        "CEBOLLA LARGA", "COLIFLOR", "ESPINACA", "HABICHUELA", "LECHUGA", "PEPINO COHOMBRO",
+                        "PIMENTÓN", "REMOLACHA", "TOMATE", "ZANAHORIA"],
+            OTROS: ["CAFÉ", "CHOCOLATE", "PASTA", "HARINA"]
+        };
 
-    // Siempre agregar la opción por defecto primero
-    const opcionPorDefecto = document.createElement("option");
-    opcionPorDefecto.value = "";
-    opcionPorDefecto.textContent = "Seleccione una plaza";
-    opcionPorDefecto.selected = true;
-    opcionPorDefecto.disabled = true;
-    plazaSelect.appendChild(opcionPorDefecto);
+        let listaProductos = []; // Almacenará los productos agregados
+        let tipoDePuntoGlobal = ""; // 'plaza' o 'externo'
 
-    // Si no hay localidad seleccionada, mostrar mensaje diferente
-    if (!localidad) {
-        plazaSelect.innerHTML = ""; // Limpiar nuevamente
-        const opcionVacia = document.createElement("option");
-        opcionVacia.value = "";
-        opcionVacia.textContent = "Seleccione una localidad primero...";
-        opcionVacia.selected = true;
-        opcionVacia.disabled = true;
-        plazaSelect.appendChild(opcionVacia);
-        return;
-    }
-
-    // Cargar las plazas de la localidad seleccionada
-    plazasPorLocalidad[localidad].forEach(plaza => {
-        const option = document.createElement("option");
-        option.value = plaza;
-        option.textContent = plaza;
-        plazaSelect.appendChild(option);
-    });
-}
-/* --- Control de pasos --- */
-function nextStep(step) {
-
-// Validación al avanzar desde Step 1: fecha obligatoria
-if (step === 1) {
-    const fecha = document.getElementById("fecha").value;
-    if (!fecha) {
-        alert("Por favor ingrese la fecha antes de continuar.");
-        return;
-    }
-}
-
-const localidad = document.getElementById("localidad").value;
-const plaza = document.getElementById("plaza").value;
-
-if (!localidad) {
-    alert("Por favor seleccione una localidad antes de continuar.");
-    return;
-}
-
-if (!plaza) {
-    alert("Por favor seleccione una plaza antes de continuar.");
-    return;
-}
-
-if (step === 2) {
-    const tipo = document.getElementById("tipoPunto").value;
-    if (!tipo) { alert("Seleccione un tipo de punto."); return; }
-
-    document.getElementById("step2").classList.remove("active");
-
-    if (tipo === "plaza") {
-        document.getElementById("step3_tipoEncuesta").classList.add("active");
-    } else {
-        document.getElementById("step3_externo").classList.add("active");
-    }
-    return;
-}
-
-document.getElementById("step" + step).classList.remove("active");
-document.getElementById("step" + (step + 1)).classList.add("active");
-}
-
-
-/* --- Paso después del tipo de encuesta --- */
-function nextTipoEncuesta() {
-    const tipo = document.getElementById("tipoEncuesta").value;
-
-    if (!tipo) {
-        alert("Seleccione un tipo de encuesta.");
-        return;
-    }
-
-    document.getElementById("step3_tipoEncuesta").classList.remove("active");
-
-    // Por ahora ambas opciones llevan al mismo step
-    document.getElementById("step3_plaza").classList.add("active");
-}
-
-/* --- Botón Atrás --- */
-function prevStep(step) {
-    if (step === 3) {
-        document.getElementById("step2").classList.add("active");
-        document.getElementById("step3_tipoEncuesta").classList.remove("active");
-        document.getElementById("step3_plaza").classList.remove("active");
-        document.getElementById("step3_externo").classList.remove("active");
-        return;
-    }
-
-    if (step === 4) {
-        document.getElementById("step3_tipoEncuesta").classList.add("active");
-        document.getElementById("step3_plaza").classList.remove("active");
-        return;
-    }
-
-    document.getElementById("step" + step).classList.remove("active");
-    document.getElementById("step" + (step - 1)).classList.add("active");
-}
-
-/* --- Ir a la pantalla de agregar productos --- */
-function submitForm() {
-    const localidad = document.getElementById("localidad").value;
-    const plaza = document.getElementById("plaza").value;
-    const numLocal = document.getElementById("numLocal").value;
-
-    if (!numLocal) {
-        alert("Por favor ingrese el número del local.");
-        return;
-    }
-
-    // Ocultar el formulario principal
-    document.querySelector(".container").style.display = "none";
-
-    // Mostrar pantalla de agregar productos
-    document.getElementById("pantallaAgregarProductos").style.display = "block";
-
-    // Llenar encabezado
-    document.getElementById("infoLocalidad").textContent = localidad;
-    document.getElementById("infoPlaza").textContent = plaza;
-    document.getElementById("infoLocal").textContent = "Local " + numLocal;
-}
-
-</script>
-<div class="container">
-<!-- ==============================
-     PANTALLA AGREGAR PRODUCTOS
-================================= -->
-
-<div id="pantallaAgregarProductos" style="display:none; padding:20px;">
-
-    <!-- ENCABEZADO SUPERIOR -->
-    <div style="font-size:18px; font-weight:bold; margin-bottom:20px;">
-        <span id="infoLocalidad"></span>,
-        <span id="infoPlaza"></span> - 
-        <span id="infoLocal"></span>
-    </div>
-
-    <!-- BOTÓN PARA AGREGAR PRODUCTO -->
-    <center><button class="btn"onclick="abrirModalProducto()" 
-        style="padding:10px 20px; font-size:16px;">
-        Agregar producto
-    </button></center>
-
-<!-- TABLA DE PRODUCTOS -->
-<table id="tablaProductos" border="1" 
-       style="margin-top:20px; width:100%; border-collapse:collapse; display:none;">
-    <thead>
-        <tr style="background:#f0f0f0;">
-            <th>Grupo</th>
-            <th>Producto</th>
-            <th>Precio</th>
-            <th>Unidad</th>
-            <th>Canasta</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
-    <tbody id="tbodyProductos"></tbody>
-</table>
-
-<!-- BOTÓN ENVIAR -->
-<center><button class="button"id="btnEnviar" onclick="enviarFormulario()"
-        style="margin-top:20px; padding:12px 25px; font-size:16px; display:none;">
-    Enviar
-</button></center>
-
-</div>
-</div>
-<!-- ==============================
-     MODAL EMERGENTE
-================================= -->
-
-<style>
-.modalFondo {
-    display:none;
-    position:fixed;
-    top:0; left:0; right:0; bottom:0;
-    background:rgba(0,0,0,0.5);
-    justify-content:center;
-    align-items:center;
-    z-index:1000;
-}
-
-.modalContenido {
-    background:white;
-    padding:25px;
-    width:350px;
-    border-radius:10px;
-}
-</style>
-
-<div id="modalProducto" class="modalFondo">
-    <div class="modalContenido">
-
-        <h3 id="tituloModal">Agregar Producto</h3>
-
-        <input type="hidden" id="editIndex">
-
-        <!-- GRUPO ALIMENTARIO -->
-        <label>Grupo alimentario:</label>
-        <select id="grupoAlimentario" onchange="actualizarListaProductos()">
-            <option value="">Seleccione un grupo</option>
-            <option value="CARNICOS">CÁRNICOS</option>
-            <option value="CEREALES">CEREALES</option>
-            <option value="ENDULZANTES">ENDULZANTES</option>
-            <option value="FRUTAS">FRUTAS</option>
-            <option value="GRANOS">GRANOS</option>
-            <option value="GRASAS">GRASAS</option>
-            <option value="HIERBAS">HIERBAS</option>
-            <option value="HUEVOS">HUEVOS</option>
-            <option value="LACTEOS">LÁCTEOS</option>
-            <option value="PESCADO">PESCADO</option>
-            <option value="PLATANO">PLÁTANO</option>
-            <option value="POLLO">POLLO</option>
-            <option value="TUBERCULOS">TUBÉRCULOS</option>
-            <option value="VERDURAS">VERDURAS</option>
-            <option value="OTROS">OTROS</option>
-        </select>
-
-        <br>
-
-        <!-- PRODUCTOS DEPENDIENTES -->
-        <label>Producto:</label>
-        <select id="producto">
-            <option value="">Seleccione un producto</option>
-        </select>
-        <p id="avisoCanasta" style="display:none; font-weight:bold; margin-top:5px;"></p>
-
-        <!-- PRECIO -->
-        <label>Precio de venta:</label>
-        <input type="number" id="precioVenta" placeholder="Ej: 3500" min="0" 
-            style="width:100%; padding:6px;">
-
-        <!-- UNIDAD -->
-        <label>Unidad de empaque:</label>
-        <select id="unidadEmpaque" style="width:100%; padding:6px;">
-            <option value="">Seleccione una unidad</option>
-            <option value="ATADO">ATADO</option>
-            <option value="BANDEJA">BANDEJA</option>
-            <option value="BLOQUE">BLOQUE</option>
-            <option value="BOLSA">BOLSA</option>
-            <option value="BOTELLA">BOTELLA</option>
-            <option value="BULTO">BULTO</option>
-            <option value="CAJA">CAJA</option>
-            <option value="CANAL">CANAL</option>
-            <option value="CANASTA">CANASTA</option>
-            <option value="GUACAL">GUACAL</option>
-            <option value="RUEDA">RUEDA</option>
-        </select>
-
-        <br><br>
-
-        <!-- BOTONES -->
-        <center><button class="btn" onclick="guardarProducto()">Guardar</button>
-        <button class="btn_1" onclick="cerrarModalProducto()">Cancelar</button>
-    </center>
-    </div>
-</div>
-
-<!-- ==============================
-     JAVASCRIPT
-================================= -->
-
-<script>
-
-let listaProductos = []; // AQUÍ SE GUARDAN LOS PRODUCTOS
-
-/* PRODUCTOS CANASTA */
-const productosCanasta = [
-    "CAFÉ", "CHOCOLATE", "PASTA", "HARINA", "MOJARRA", "GENERAL",
-    "PECHUGA", "TOMATE", "ZANAHORIA", "CEBOLLA LARGA", "CILANTRO",
-    "YUCA", "PAPA", "HUEVOS", "LECHE", "QUESO", "ACEITE",
-    "LENTEJAS", "FRIJOL", "NARANJA", "PAPAYA", "BANANO",
-    "SAL", "PANELA", "AZUCAR", "ARROZ", "LOMO", "CHATAS"
-];
-
-/* PRODUCTOS POR GRUPO */
-const productosPorGrupo = {
-    CARNICOS: ["CADERA", "CANAL", "CHATAS", "COSTILLA", "FALDA", "LOMO", "PIERNA", "SOBREBARRIGA"],
-    CEREALES: ["ARROZ", "TRIGO", "AVENA"],
-    ENDULZANTES: ["SAL", "PANELA", "AZUCAR"],
-    FRUTAS: ["AGUACATE", "AGUACATE HASS", "BANANO", "CURUBA", "DURAZNO", "FRESA", "GRANADILLA", "GUANÁBANA", "GUAYABA",
-             "LIMÓN", "MANDARINA", "MANGO", "MORA", "PAPAYA", "PIÑA", "PERA", "UVA", "NARANJA"],
-    GRANOS: ["GARBANZO", "LENTEJAS", "FRIJOL", "MAIZ", "ARROZ", "AVENA"],
-    GRASAS: ["ACEITE", "MANTEQUILLA"],
-    HIERBAS: ["NO APLICA"],
-    HUEVOS: ["NO APLICA"],
-    LACTEOS: ["LECHE", "QUESO", "YOGURTH", "CUAJADA"],
-    PESCADO: ["MOJARRA"],
-    PLATANO: ["GENERAL"],
-    POLLO: ["PECHUGA"],
-    TUBERCULOS: ["ARRACACHA", "PAPA", "YUCA"],
-    VERDURAS: ["ACELGA", "AHUYAMA", "AJO", "APIO", "ARVEJA VERDE", "BRÓCOLI", "CALABACÍN", "CEBOLLA CABEZONA",
-               "CEBOLLA LARGA", "CILANTRO", "COLIFLOR", "ESPINACA", "HABICHUELA", "LECHUGA", "PEPINO COHOMBRO",
-               "PIMENTÓN", "REMOLACHA", "TOMATE", "ZANAHORIA"],
-    OTROS: ["CAFÉ", "CHOCOLATE", "PASTA", "HARINA"]
-};
-
-/* ABRIR MODAL
-   si mode === 'new' limpiamos editIndex, si no (edit) lo mantenemos */
-   function abrirModalProducto(mode = 'new') {
-    document.getElementById("modalProducto").style.display = "flex";
-    if (mode === 'new') {
-        document.getElementById("tituloModal").textContent = "Agregar Producto";
-        document.getElementById("editIndex").value = "";
-        // limpiar campos del modal
-        document.getElementById("grupoAlimentario").value = "";
-        actualizarListaProductos();
-        document.getElementById("producto").value = "";
-        document.getElementById("precioVenta").value = "";
-        document.getElementById("unidadEmpaque").value = "";
-        document.getElementById("avisoCanasta").style.display = "none";
-    } else {
-        // modo edición: titulo se establece en editar antes de llamar
-        // No limpiamos editIndex porque contiene el índice a editar
-    }
-}
-
-
-/* CERRAR MODAL */
-function cerrarModalProducto() {
-    document.getElementById("modalProducto").style.display = "none";
-}
-
-/* ACTUALIZAR PRODUCTOS POR GRUPO */
-function actualizarListaProductos() {
-    const grupo = document.getElementById("grupoAlimentario").value;
-    const selectProducto = document.getElementById("producto");
-
-    selectProducto.innerHTML = `<option value="">Seleccione un producto</option>`;
-
-    if (grupo && productosPorGrupo[grupo]) {
-        productosPorGrupo[grupo].forEach(p => {
-            const opt = document.createElement("option");
-            opt.value = p;
-            opt.textContent = p;
-            selectProducto.appendChild(opt);
+        /* --- MANEJO DE PASOS --- */
+        document.getElementById("tipoPunto").addEventListener("change", function() {
+            const tipo = this.value;
+            document.getElementById("campoNumLocal").style.display = tipo === 'plaza' ? 'block' : 'none';
+            document.getElementById("campoRefLocalExterno").style.display = tipo === 'externo' ? 'block' : 'none';
         });
-    }
-}
 
-/* MOSTRAR SI ES CANASTA */
-document.getElementById("producto").addEventListener("change", function () {
-    const aviso = document.getElementById("avisoCanasta");
-    const producto = this.value;
+        function cargarPlazas() {
+            const localidad = document.getElementById("localidad").value;
+            const plazaSelect = document.getElementById("plaza");
+            plazaSelect.innerHTML = `<option value="" disabled selected>Seleccione una plaza</option>`;
 
-    if (productosCanasta.includes(producto.toUpperCase())) {
-        aviso.textContent = "✓ Pertenece a la canasta familiar";
-        aviso.style.color = "red";
-        aviso.style.display = "block";
-    } else {
-        aviso.style.display = "none";
-    }
-});
+            if (!localidad) {
+                plazaSelect.innerHTML = `<option value="" disabled selected>Seleccione una localidad primero...</option>`;
+                return;
+            }
 
-/* GUARDAR PRODUCTO */
-function guardarProducto() {
-    let grupo = document.getElementById("grupoAlimentario").value;
-    let producto = document.getElementById("producto").value;
-    let precio = document.getElementById("precioVenta").value;
-    let unidad = document.getElementById("unidadEmpaque").value;
-    let editIndex = document.getElementById("editIndex").value;
+            plazasPorLocalidad[localidad].forEach(plaza => {
+                const option = document.createElement("option");
+                option.value = plaza;
+                option.textContent = plaza;
+                plazaSelect.appendChild(option);
+            });
+        }
 
-    if (!grupo || !producto || !precio || !unidad) {
-        alert("Por favor complete todos los campos.");
-        return;
-    }
+        function nextStep(step) {
+            // Validaciones de Step 1
+            const encuestador = document.getElementById("encuestador").value;
+            const fecha = document.getElementById("fecha").value;
+            const localidad = document.getElementById("localidad").value;
+            const plaza = document.getElementById("plaza").value;
 
-    let canasta = productosCanasta.includes(producto.toUpperCase()) ? "Sí" : "N/A";
+            if (!encuestador || !fecha || !localidad || !plaza) {
+                alert("Por favor complete todos los campos de esta sección.");
+                return;
+            }
 
-    let obj = { grupo, producto, precio, unidad, canasta };
+            document.getElementById("step" + step).classList.remove("active");
+            document.getElementById("step" + (step + 1)).classList.add("active");
+        }
 
-    if (editIndex === "") {
-        listaProductos.push(obj); // AGREGAR
-    } else {
-        listaProductos[editIndex] = obj; // EDITAR
-    }
+        function prevStep(step) {
+            document.getElementById("step" + step).classList.remove("active");
+            document.getElementById("step" + (step - 1)).classList.add("active");
+        }
 
-    mostrarTabla();
-    cerrarModalProducto();
-}
+        function goToProductsScreen() {
+            const tipoPunto = document.getElementById("tipoPunto").value;
+            tipoDePuntoGlobal = tipoPunto; // Guardar globalmente
 
-/* MOSTRAR TABLA */
-function mostrarTabla() {
-    const tabla = document.getElementById("tablaProductos");
-    const tbody = document.getElementById("tbodyProductos");
-    const btnEnviar = document.getElementById("btnEnviar");
+            if (!tipoPunto) { alert("Seleccione un tipo de punto."); return; }
 
-    tbody.innerHTML = "";
+            // Validaciones específicas
+            if (tipoPunto === 'plaza') {
+                const numLocal = document.getElementById("numLocal").value;
+                if (!numLocal) { alert("Ingrese el número del local."); return; }
+            } else if (tipoPunto === 'externo') {
+                const refLocalExterno = document.getElementById("refLocalExterno").value;
+                if (!refLocalExterno) { alert("Ingrese el nombre o dirección del local externo."); return; }
+            }
 
-    listaProductos.forEach((p, index) => {
-        let fila = `
-        <tr>
-            <td>${p.grupo}</td>
-            <td>${p.producto}</td>
-            <td>${p.precio}</td>
-            <td>${p.unidad}</td>
-            <td>${p.canasta}</td>
-            <td>
-               <center> <button class="btn" onclick="editarProducto(${index})">Editar</button>
-                <button class="btn_1"  onclick="eliminarProducto(${index})">Eliminar</button></center>
-            </td>
-        </tr>`;
-        tbody.innerHTML += fila;
-    });
+            // Ocultar el formulario principal y mostrar la pantalla de productos
+            document.getElementById("mainFormContainer").style.display = "none";
+            document.getElementById("pantallaAgregarProductos").style.display = "block";
 
-    tabla.style.display = listaProductos.length > 0 ? "table" : "none";
-    btnEnviar.style.display = listaProductos.length > 0 ? "inline-block" : "none";
-}
+            // Llenar encabezado de la pantalla de productos
+            document.getElementById("infoEncuestador").textContent = "Encuestador: " + document.getElementById("encuestador").value;
+            document.getElementById("infoFecha").textContent = "Fecha: " + document.getElementById("fecha").value;
+            document.getElementById("infoLocalidad").textContent = "Localidad: " + document.getElementById("localidad").value;
+            document.getElementById("infoPlaza").textContent = "Plaza: " + document.getElementById("plaza").value;
 
-/* EDITAR */
-function editarProducto(i) {
-    let p = listaProductos[i];
+            if (tipoPunto === 'plaza') {
+                document.getElementById("infoPunto").textContent = "Local Plaza #" + document.getElementById("numLocal").value;
+            } else {
+                document.getElementById("infoPunto").textContent = "Local Externo: " + document.getElementById("refLocalExterno").value;
+            }
 
-    document.getElementById("grupoAlimentario").value = p.grupo;
-    actualizarListaProductos();
+            // Asegurar que la tabla esté oculta al iniciar si no hay productos
+            mostrarTabla();
+        }
 
-    // Después de cargar opciones, seleccionamos el producto
-    document.getElementById("producto").value = p.producto;
+        function cancelarEncuesta() {
+            if (confirm("¿Está seguro de que desea cancelar la encuesta y volver al inicio? Se perderán los productos agregados.")) {
+                listaProductos = []; // Limpiar lista
+                document.getElementById("mainFormContainer").style.display = "block";
+                document.getElementById("pantallaAgregarProductos").style.display = "none";
+                document.getElementById("step1").classList.add("active");
+                document.getElementById("step2").classList.remove("active");
+                // Aquí podrías añadir lógica para limpiar todos los campos del formulario si fuera necesario
+            }
+        }
 
-    document.getElementById("precioVenta").value = p.precio;
-    document.getElementById("unidadEmpaque").value = p.unidad;
+        /* --- MANEJO DEL MODAL PRODUCTO --- */
 
-    document.getElementById("editIndex").value = i;
-    document.getElementById("tituloModal").textContent = "Editar Producto";
+        function abrirModalProducto(mode = 'new', index = null) {
+            document.getElementById("modalProducto").style.display = "flex";
 
-    // Abrimos el modal en modo edición para no resetear editIndex
-    abrirModalProducto('edit');
+            document.getElementById("camposLocalPlaza").style.display = tipoDePuntoGlobal === 'plaza' ? 'block' : 'none';
+            document.getElementById("camposLocalExterno").style.display = tipoDePuntoGlobal === 'externo' ? 'block' : 'none';
+            document.getElementById("camposCanastaPlaza").style.display = 'none'; // Ocultar por defecto
 
-    // Mostrar aviso de canasta si aplica
-    const aviso = document.getElementById("avisoCanasta");
-    if (productosCanasta.includes(p.producto.toUpperCase())) {
-        aviso.textContent = "✓ Pertenece a la canasta familiar";
-        aviso.style.color = "red";
-        aviso.style.display = "block";
-    } else {
-        aviso.style.display = "none";
-    }
-}
+            if (mode === 'new') {
+                document.getElementById("tituloModal").textContent = tipoDePuntoGlobal === 'plaza' ? "Agregar Producto" : "Agregar Producto Canasta";
+                document.getElementById("editIndex").value = "";
+                // Limpiar campos del modal
+                document.getElementById("grupoAlimentario").value = "";
+                actualizarListaProductos();
+                document.getElementById("producto").value = "";
+                document.getElementById("avisoCanasta").style.display = "none";
+
+                // Limpiar campos de Local Plaza
+                document.getElementById("pesoLibras").value = "";
+                document.getElementById("unidadMedida").value = "";
+                document.getElementById("cantidad").value = "";
+                document.getElementById("frecuenciaCompra").value = "";
+                document.getElementById("precioVentaCanasta").value = "";
+                document.getElementById("unidadEmpaqueCanasta").value = "";
+
+                // Limpiar campos de Local Externo
+                document.getElementById("precioVentaExterno").value = "";
+                document.getElementById("unidadMedidaExterno").value = "";
+                document.getElementById("unidadEmpaqueExterno").value = "";
+
+            } else if (mode === 'edit' && index !== null) {
+                editarProducto(index);
+            }
+        }
 
 
-/* ELIMINAR */
-function eliminarProducto(i) {
-    if (confirm("¿Seguro que quieres eliminar este producto?")) {
-        listaProductos.splice(i, 1);
-        mostrarTabla();
-    }
-}
+        function cerrarModalProducto() {
+            document.getElementById("modalProducto").style.display = "none";
+        }
 
-/* ENVIAR FORMULARIO */
-function enviarFormulario() {
-    alert("Formulario enviado (simulación). Listo para conectar con Firebase.");
-}
+        function actualizarListaProductos() {
+            const grupo = document.getElementById("grupoAlimentario").value;
+            const selectProducto = document.getElementById("producto");
 
-</script>
+            selectProducto.innerHTML = `<option value="">Seleccione un producto</option>`;
+
+            if (grupo && productosPorGrupo[grupo]) {
+                productosPorGrupo[grupo].forEach(p => {
+                    // Si es local externo, solo mostrar productos de canasta
+                    if (tipoDePuntoGlobal === 'externo' && !productosCanasta.includes(p.toUpperCase())) {
+                        return;
+                    }
+                    const opt = document.createElement("option");
+                    opt.value = p;
+                    opt.textContent = p;
+                    selectProducto.appendChild(opt);
+                });
+            }
+            // Disparar el evento change para actualizar el aviso de canasta
+            selectProducto.dispatchEvent(new Event('change'));
+        }
+
+        // MOSTRAR CAMPOS ADICIONALES Y AVISO DE CANASTA
+        document.getElementById("producto").addEventListener("change", function () {
+            const aviso = document.getElementById("avisoCanasta");
+            const producto = this.value;
+            const esCanasta = productosCanasta.includes(producto.toUpperCase());
+            const camposCanastaPlaza = document.getElementById("camposCanastaPlaza");
+
+            if (esCanasta) {
+                aviso.textContent = "✓ Pertenece a la canasta familiar";
+                aviso.style.display = "block";
+                if (tipoDePuntoGlobal === 'plaza') {
+                    camposCanastaPlaza.style.display = "block";
+                }
+            } else {
+                aviso.style.display = "none";
+                if (tipoDePuntoGlobal === 'plaza') {
+                    camposCanastaPlaza.style.display = "none";
+                }
+            }
+            
+            // Si es local externo y selecciona un producto que NO es de canasta, alerta (aunque el select debería filtrarlo)
+            if (tipoDePuntoGlobal === 'externo' && !esCanasta && producto) {
+                alert("Para locales externos, solo se permite información de productos de la canasta familiar.");
+                this.value = "";
+            }
+        });
+
+        function guardarProducto() {
+            let grupo = document.getElementById("grupoAlimentario").value;
+            let producto = document.getElementById("producto").value;
+            let editIndex = document.getElementById("editIndex").value;
+
+            if (!grupo || !producto) {
+                alert("Por favor seleccione el Grupo alimentario y el Producto.");
+                return;
+            }
+
+            const esCanasta = productosCanasta.includes(producto.toUpperCase());
+            let obj = {
+                grupo,
+                producto,
+                canasta: esCanasta ? "Sí" : "No",
+                tipoPunto: tipoDePuntoGlobal // Guardamos el tipo para referencia
+            };
+
+            // VALIDACIÓN Y ASIGNACIÓN PARA LOCAL DENTRO DE LA PLAZA (LOCAL PLAZA)
+            if (tipoDePuntoGlobal === 'plaza') {
+                const pesoLibras = document.getElementById("pesoLibras").value;
+                const unidadMedida = document.getElementById("unidadMedida").value;
+                const cantidad = document.getElementById("cantidad").value;
+                const frecuenciaCompra = document.getElementById("frecuenciaCompra").value;
+
+                if (!pesoLibras || !unidadMedida || !cantidad || !frecuenciaCompra) {
+                    alert("Complete los campos: Peso, Unidad de medida, Cantidad y Frecuencia de compra.");
+                    return;
+                }
+
+                Object.assign(obj, { pesoLibras, unidadMedida, cantidad, frecuenciaCompra });
+
+                if (esCanasta) {
+                    const precioVentaCanasta = document.getElementById("precioVentaCanasta").value;
+                    const unidadEmpaqueCanasta = document.getElementById("unidadEmpaqueCanasta").value;
+                    if (!precioVentaCanasta || !unidadEmpaqueCanasta) {
+                        alert("Complete los Datos adicionales: Precio de venta y Unidad de empaque.");
+                        return;
+                    }
+                    Object.assign(obj, { precioVenta: precioVentaCanasta, unidadEmpaque: unidadEmpaqueCanasta });
+                } else {
+                    Object.assign(obj, { precioVenta: "N/A", unidadEmpaque: "N/A" });
+                }
+
+            // VALIDACIÓN Y ASIGNACIÓN PARA LOCAL EXTERNO
+            } else if (tipoDePuntoGlobal === 'externo') {
+                if (!esCanasta) {
+                    alert("Solo se permite información de productos de la canasta familiar para locales externos.");
+                    return;
+                }
+                const precioVentaExterno = document.getElementById("precioVentaExterno").value;
+                const unidadMedidaExterno = document.getElementById("unidadMedidaExterno").value;
+                const unidadEmpaqueExterno = document.getElementById("unidadEmpaqueExterno").value;
+
+                if (!precioVentaExterno || !unidadMedidaExterno || !unidadEmpaqueExterno) {
+                    alert("Complete los campos: Precio, Unidad de medida y Unidad de empaque.");
+                    return;
+                }
+                Object.assign(obj, {
+                    precioVenta: precioVentaExterno,
+                    unidadMedida: unidadMedidaExterno,
+                    unidadEmpaque: unidadEmpaqueExterno,
+                    pesoLibras: "N/A", // Se dejan como N/A para externo
+                    cantidad: "N/A",
+                    frecuenciaCompra: "N/A"
+                });
+            }
+
+            if (editIndex === "") {
+                listaProductos.push(obj); // AGREGAR
+            } else {
+                listaProductos[editIndex] = obj; // EDITAR
+            }
+
+            mostrarTabla();
+            cerrarModalProducto();
+        }
+
+        /* --- MANEJO DE LA TABLA --- */
+
+        function mostrarTabla() {
+            const tabla = document.getElementById("tablaProductos");
+            const tbody = document.getElementById("tbodyProductos");
+            const btnEnviar = document.getElementById("btnEnviar");
+
+            tbody.innerHTML = "";
+
+            listaProductos.forEach((p, index) => {
+                let precioColumna = "";
+                let cantidadColumna = "";
+
+                if (p.tipoPunto === 'plaza') {
+                    // LOCAL PLAZA: Muestra Precio/Peso/Unidad de Empaque (si es canasta) y Cantidad/Frecuencia
+                    precioColumna = p.canasta === "Sí" ? `Precio: $${p.precioVenta}<br>Empaque: ${p.unidadEmpaque}` : `Peso: ${p.pesoLibras} ${p.unidadMedida}`;
+                    cantidadColumna = `Cantidad: ${p.cantidad}<br>Frecuencia: ${p.frecuenciaCompra}`;
+                } else if (p.tipoPunto === 'externo') {
+                    // LOCAL EXTERNO: Muestra Precio/Unidad de Empaque (Solo canasta) y N/A para Cantidad/Frecuencia
+                    precioColumna = `Precio: $${p.precioVenta}<br>Empaque: ${p.unidadEmpaque}`;
+                    cantidadColumna = `Medida: ${p.unidadMedida}<br>Cantidad: N/A`;
+                }
+
+                let fila = `
+                <tr>
+                    <td>${p.grupo}</td>
+                    <td>${p.producto}</td>
+                    <td>${p.canasta}</td>
+                    <td>${precioColumna}</td>
+                    <td>${p.unidadMedida}</td>
+                    <td>${cantidadColumna}</td>
+                    <td>
+                        <button class="btn" style="margin:2px;" onclick="abrirModalProducto('edit', ${index})">Editar</button>
+                        <button class="btn_1" style="margin:2px;" onclick="eliminarProducto(${index})">Eliminar</button>
+                    </td>
+                </tr>`;
+                tbody.innerHTML += fila;
+            });
+
+            tabla.style.display = listaProductos.length > 0 ? "table" : "none";
+            btnEnviar.style.display = listaProductos.length > 0 ? "inline-block" : "none";
+        }
+
+        function editarProducto(i) {
+            let p = listaProductos[i];
+
+            document.getElementById("grupoAlimentario").value = p.grupo;
+            actualizarListaProductos(); // Rellena productos según el grupo
+
+            // Esperar un ciclo para asegurar que el select se llenó
+            setTimeout(() => {
+                document.getElementById("producto").value = p.producto;
+
+                // Cargar campos específicos
+                if (p.tipoPunto === 'plaza') {
+                    document.getElementById("pesoLibras").value = p.pesoLibras;
+                    document.getElementById("unidadMedida").value = p.unidadMedida;
+                    document.getElementById("cantidad").value = p.cantidad;
+                    document.getElementById("frecuenciaCompra").value = p.frecuenciaCompra;
+
+                    if (p.canasta === 'Sí') {
+                        document.getElementById("precioVentaCanasta").value = p.precioVenta;
+                        document.getElementById("unidadEmpaqueCanasta").value = p.unidadEmpaque;
+                        document.getElementById("camposCanastaPlaza").style.display = "block";
+                    } else {
+                        document.getElementById("camposCanastaPlaza").style.display = "none";
+                    }
+                } else if (p.tipoPunto === 'externo') {
+                    document.getElementById("precioVentaExterno").value = p.precioVenta;
+                    document.getElementById("unidadMedidaExterno").value = p.unidadMedida;
+                    document.getElementById("unidadEmpaqueExterno").value = p.unidadEmpaque;
+                }
+
+                document.getElementById("editIndex").value = i;
+                document.getElementById("tituloModal").textContent = "Editar Producto";
+                
+                // Disparar el aviso de canasta para actualizar el mensaje
+                document.getElementById("producto").dispatchEvent(new Event('change'));
+
+            }, 50); // Pequeño retraso para asegurar carga del select
+        }
+
+
+        function eliminarProducto(i) {
+            if (confirm("¿Seguro que quieres eliminar este producto?")) {
+                listaProductos.splice(i, 1);
+                mostrarTabla();
+            }
+        }
+
+        function enviarFormulario() {
+            const formData = {
+                encuestador: document.getElementById("encuestador").value,
+                fecha: document.getElementById("fecha").value,
+                localidad: document.getElementById("localidad").value,
+                plaza: document.getElementById("plaza").value,
+                tipoPunto: tipoDePuntoGlobal,
+                referencia: tipoDePuntoGlobal === 'plaza' ? document.getElementById("numLocal").value : document.getElementById("refLocalExterno").value,
+                productos: listaProductos
+            };
+
+            console.log(formData);
+            alert("Formulario enviado (simulación). Revisa la consola para ver los datos.");
+            // Aquí iría la lógica para enviar `formData` a tu base de datos (ej. Firebase)
+        }
+
+    </script>
 
 </body>
 </html>
-
-
