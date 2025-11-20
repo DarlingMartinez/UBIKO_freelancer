@@ -368,35 +368,80 @@
             document.getElementById("step2").classList.add("active");
             document.getElementById("step1").classList.remove("active");
         }
+if (typeof contextoActual === 'undefined') {
+    var contextoActual = { tipo: "", id: "" }; 
+}
 
-        function goToProductsScreen() {
-            const tipoPunto = document.getElementById("tipoPunto").value;
-            tipoDePuntoGlobal = tipoPunto; 
-            if (!tipoPunto) { alert("Seleccione un tipo de punto."); return; }
+function goToProductsScreen() {
+    // 1. Capturar los valores actuales que el usuario acaba de seleccionar
+    const nuevoTipoPunto = document.getElementById("tipoPunto").value;
+    let nuevoIdLocal = "";
 
-            if (tipoPunto === 'plaza') {
-                const numLocal = document.getElementById("numLocal").value;
-                if (!numLocal) { alert("Ingrese el número del local."); return; }
-            } else if (tipoPunto === 'externo') {
-                const refLocalExterno = document.getElementById("refLocalExterno").value;
-                if (!refLocalExterno) { alert("Ingrese el nombre o dirección del local externo."); return; }
-            }
+    // Validaciones básicas de campos vacíos
+    if (!nuevoTipoPunto) { alert("Seleccione un tipo de punto."); return; }
 
-            document.getElementById("mainFormContainer").style.display = "none";
-            document.getElementById("pantallaAgregarProductos").style.display = "block";
+    if (nuevoTipoPunto === 'plaza') {
+        nuevoIdLocal = document.getElementById("numLocal").value;
+        if (!nuevoIdLocal) { alert("Ingrese el número del local."); return; }
+    } else if (nuevoTipoPunto === 'externo') {
+        nuevoIdLocal = document.getElementById("refLocalExterno").value;
+        if (!nuevoIdLocal) { alert("Ingrese el nombre o dirección del local externo."); return; }
+    }
 
-            document.getElementById("infoEncuestador").textContent = "Encuestador: " + document.getElementById("encuestador").value;
-            document.getElementById("infoFecha").textContent = "Fecha: " + document.getElementById("fecha").value;
-            document.getElementById("infoLocalidad").textContent = "Localidad: " + document.getElementById("localidad").value;
-            document.getElementById("infoPlaza").textContent = "Plaza: " + document.getElementById("plaza").value;
+    // 2. LÓGICA DE PROTECCIÓN ESTRICTA
+    // Verificamos dos cosas:
+    // A. ¿Cambió el TIPO? (Ej: De Plaza a Externo)
+    const cambioElTipo = (contextoActual.tipo !== "" && contextoActual.tipo !== nuevoTipoPunto);
+    
+    // B. ¿Cambió el ID? (Ej: Del local 101 al 102)
+    const cambioElId = (contextoActual.id !== "" && contextoActual.id !== nuevoIdLocal);
 
-            if (tipoPunto === 'plaza') {
-                document.getElementById("infoPunto").textContent = "Local Plaza #" + document.getElementById("numLocal").value;
-            } else {
-                document.getElementById("infoPunto").textContent = "Local Externo: " + document.getElementById("refLocalExterno").value;
-            }
-            mostrarTabla();
+    // SI hay productos cargados Y (cambió el tipo O cambió el ID) -> ALERTA
+    if (listaProductos.length > 0 && (cambioElTipo || cambioElId)) {
+        
+        let mensajeAlerta = "⚠️ ATENCIÓN:\n\n";
+        if (cambioElTipo) {
+            mensajeAlerta += "Has cambiado el TIPO DE PUNTO (de " + contextoActual.tipo + " a " + nuevoTipoPunto + ").\n";
+        } else {
+            mensajeAlerta += "Has cambiado el NÚMERO/ID DEL LOCAL.\n";
         }
+        mensajeAlerta += "\nYa tienes productos ingresados del punto anterior.\n¿Deseas ELIMINAR los productos para continuar con este nuevo punto?";
+
+        const confirmar = confirm(mensajeAlerta);
+
+        if (confirmar) {
+            listaProductos = []; // Borrón y cuenta nueva
+            // Si estás usando el código de localStorage, forzamos guardado aquí
+            if (typeof guardarEstadoLocal === "function") guardarEstadoLocal();
+        } else {
+            return; // El usuario dijo "Cancelar", nos quedamos en esta pantalla para que corrija
+        }
+    }
+
+    // 3. Si pasamos la validación (o limpiamos la lista), actualizamos el contexto actual
+    contextoActual = { tipo: nuevoTipoPunto, id: nuevoIdLocal };
+    tipoDePuntoGlobal = nuevoTipoPunto; 
+
+    // 4. Cambio de Pantalla (Visual)
+    document.getElementById("mainFormContainer").style.display = "none";
+    document.getElementById("pantallaAgregarProductos").style.display = "block";
+
+    document.getElementById("infoEncuestador").textContent = "Encuestador: " + document.getElementById("encuestador").value;
+    document.getElementById("infoFecha").textContent = "Fecha: " + document.getElementById("fecha").value;
+    document.getElementById("infoLocalidad").textContent = "Localidad: " + document.getElementById("localidad").value;
+    document.getElementById("infoPlaza").textContent = "Plaza: " + document.getElementById("plaza").value;
+
+    if (nuevoTipoPunto === 'plaza') {
+        document.getElementById("infoPunto").textContent = "Local Plaza #" + nuevoIdLocal;
+    } else {
+        document.getElementById("infoPunto").textContent = "Local Externo: " + nuevoIdLocal;
+    }
+    
+    mostrarTabla();
+    
+    // Guardado automático
+    if (typeof guardarEstadoLocal === "function") guardarEstadoLocal();
+}
 
         function cancelarEncuesta() {
             if (confirm("¿Está seguro de cancelar? Se perderán los productos agregados.")) {
