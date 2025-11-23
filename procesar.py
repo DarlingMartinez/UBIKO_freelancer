@@ -4,7 +4,7 @@ import sys
 
 # --- CONFIGURACIÓN ---
 # ID de tu hoja de cálculo
-SHEET_ID = 'TU_ID_DEL_SHEET_AQUI' 
+SHEET_ID = 'AKfycbyK3CAcbmQ3sKZ2UxLcQjort9PITPlMhV7xKXW5pT5Iv-zwGZyPb55gmoQZl4YG_HGWig' 
 SHEET_NAME = 'Hoja 1' # Asegúrate que coincida con el nombre de tu pestaña
 URL = f'https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}'
 
