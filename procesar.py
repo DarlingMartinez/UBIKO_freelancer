@@ -5,7 +5,7 @@ import sys
 # --- CONFIGURACIÓN ---
 # ID de tu hoja de cálculo
 SHEET_ID = '1UlbaB4uqO_eCxTMD-eAvguOi3Lr-98yKLonQ6V0Lp-o' 
-SHEET_NAME = 'Hoja 1' # Asegúrate que coincida con el nombre de tu pestaña
+SHEET_NAME = 'Hoja1' # Asegúrate que coincida con el nombre de tu pestaña
 URL = f'https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}'
 
 def generar_reportes():
