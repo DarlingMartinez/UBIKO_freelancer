@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel de Control - Plazas de Mercado</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; text-align: center; background-color: #f4f7f6; }
+    .container { max-width: 500px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    h2 { color: #2c3e50; }
+    button { 
+      display: block; width: 100%; margin: 15px 0; padding: 15px; 
+      font-size: 16px; font-weight: bold; cursor: pointer; 
+      border: none; border-radius: 8px; transition: 0.3s;
+    }
+    .btn-abastecimiento { background-color: #27ae60; color: white; }
+    .btn-abastecimiento:hover { background-color: #219150; }
+    
+    .btn-comparativo { background-color: #2980b9; color: white; }
+    .btn-comparativo:hover { background-color: #1f6391; }
+    
+    #status { margin-top: 20px; font-weight: bold; color: #555; }
+    .loader { display: none; color: #f39c12; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Gestión de Datos</h2>
+  
+  <div id="loader" class="loader">Procesando solicitud...</div>
+
+  <button class="btn-abastecimiento" onclick="llamarGoogleScript('abastecimiento')">
+    Proceso de Abastecimiento
+  </button>
+
+  <button class="btn-comparativo" onclick="llamarGoogleScript('run_python')">
+    Ejecutar Comparativo
+  </button>
+
+  <p id="status"></p>
+</div>
+
+<script>
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzYC10PoSwMAZ204js3j1zh8IIk3zUMcjDuZFsiXZvi57HDtiAd95lqwpHuH4D4xcBK/exec";
+
+  async function llamarGoogleScript(accion) {
+    const status = document.getElementById("status");
+    const loader = document.getElementById("loader");
+    
+    status.innerText = "";
+    loader.style.display = "block";
+
+    let payload = {};
+    if (accion === 'run_python') {
+      payload = { "action": "run_python" };
+    } else {
+      payload = { "action": "insert", "data": "Proceso iniciado" }; 
+    }
+
+    try {
+      const response = await fetch(WEB_APP_URL, {
+        method: "POST",
+        mode: "no-cors", 
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      status.style.color = "green";
+      status.innerText = (accion === 'run_python') 
+        ? "Solicitud enviada a GitHub Actions correctamente." 
+        : "Proceso de abastecimiento ejecutado.";
+
+    } catch (err) {
+      status.style.color = "red";
+      status.innerText = "Error al conectar con el servidor.";
+      console.error(err);
+    } finally {
+      loader.style.display = "none";
+    }
+  }
+</script>
+
+</body>
+</html>
