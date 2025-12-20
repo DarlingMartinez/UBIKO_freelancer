@@ -45,6 +45,66 @@
   const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzYC10PoSwMAZ204js3j1zh8IIk3zUMcjDuZFsiXZvi57HDtiAd95lqwpHuH4D4xcBK/exec";
 
   async function llamarGoogleScript(accion) {
+  const status = document.getElementById("status");
+  const loader = document.getElementById("loader");
+
+  status.innerText = "";
+  loader.style.display = "block";
+
+  let payload = {};
+  if (accion === 'run_python') {
+    payload = { action: "run_python" };
+  } else {
+    payload = { action: "insert", data: "Proceso iniciado" };
+  }
+
+  try {
+    await fetch(WEB_APP_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    status.style.color = "green";
+    status.innerText = "Archivo en proceso de generación. Espera unos segundos...";
+
+    // ⏳ Esperar a que GitHub Actions termine
+    setTimeout(() => {
+      descargarExcel();
+      status.innerText = "Archivo generado y descargado.";
+    }, 15000); // 15 segundos (ajusta según tu proceso)
+
+  } catch (err) {
+    status.style.color = "red";
+    status.innerText = "Error al conectar con el servidor.";
+    console.error(err);
+  } finally {
+    loader.style.display = "none";
+  }
+}
+
+function descargarExcel() {
+  const url = "https://raw.githubusercontent.com/DarlingMartinez/Proyecto_Plazas_De_Mercado/main/Reporte_Comparativo.xlsx";
+  
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "Reporte_Comparativo.xlsx"; // nombre con el que se descargará
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+
+  const url1 = "https://raw.githubusercontent.com/DarlingMartinez/Proyecto_Plazas_De_Mercado/main/Reporte_Comparativo.xlsx";
+  const link1 = document.createElement("a");
+  link1.href = url1;
+  link1.download = "Reporte_Comparativo.xlsx"; // nombre
+  document.body.appendChild(link1);
+  link1.click();
+  document.body.removeChild(link1);
+}
+
+  /*async function llamarGoogleScript(accion) {
     const status = document.getElementById("status");
     const loader = document.getElementById("loader");
     
@@ -78,7 +138,7 @@
     } finally {
       loader.style.display = "none";
     }
-  }
+  }*/
 </script>
 
 </body>
