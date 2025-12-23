@@ -8,6 +8,7 @@ import time
 SHEET_ID = '1j3l4u61zS44YfBPck5K7YLby1izFHMIxMZrHzhdXEU8' 
 SHEET_NAME = 'Hoja1' # Asegúrate que coincida con el nombre de tu pestaña
 URL = f'https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}&cache_buster={int(time.time())}'
+
 def generar_reportes_completos():
     try:
         print("Descargando datos...")
@@ -31,154 +32,66 @@ def generar_reportes_completos():
 
         output_file = 'Reporte_Comparativo.xlsx'
 
-        with pd.ExcelWriter(
-            output_file,
-            engine='xlsxwriter',
-            engine_kwargs={'options': {'nan_inf_to_errors': True}}
-        ) as writer:
-
+        with pd.ExcelWriter(output_file, engine='xlsxwriter') as writer:
             workbook = writer.book
             num_fmt = workbook.add_format({'num_format': '#,##0'})
             percent_fmt = workbook.add_format({'num_format': '0.00%'})
+            total_text_fmt = workbook.add_format({'bg_color': '#E7E6E6', 'bold': True})
+            total_num_fmt = workbook.add_format({'bg_color': '#E7E6E6', 'bold': True, 'num_format': '#,##0'})
+
+            # HOJA 1: RESUMEN PMD
+            resumen = df_limpio.pivot_table(index='PLAZA', columns='TIPO_PUNTO', values='VENTA_PRECIO', aggfunc='sum', fill_value=0).reset_index()
+            resumen = resumen.rename(columns={'PLAZA': 'PDM', 'plaza': '$PM', 'externo': '$Tienda'})
+            if '$PM' in resumen.columns and '$Tienda' in resumen.columns:
+                resumen['Diferencia (Tienda - Plaza)'] = resumen['$Tienda'] - resumen['$PM']
+                resumen['Represent %'] = resumen.apply(lambda r: (r['Diferencia (Tienda - Plaza)'] / r['$PM']) if r['$PM'] != 0 else 0, axis=1)
             
-            # Formato para el texto del total (Gris + Negrita)
-            total_text_fmt = workbook.add_format({
-                'bg_color': '#E7E6E6',
-                'bold': True
-            })
-            
-            # Formato para los números del total (Gris + Negrita + Separador de miles)
-            total_num_fmt = workbook.add_format({
-                'bg_color': '#E7E6E6',
-                'bold': True,
-                'num_format': '#,##0'
-            })
-
-            # =====================================================
-            # HOJA 1: RESUMEN PMD 
-            # =====================================================
-            resumen = df_limpio.pivot_table(
-                index='PLAZA',
-                columns='TIPO_PUNTO',
-                values='VENTA_PRECIO',
-                aggfunc='sum',
-                fill_value=0
-            ).reset_index()
-
-            resumen = resumen.rename(columns={
-                'PLAZA': 'PDM',
-                'plaza': '$PM',
-                'externo': '$Tienda'
-            })
-
-            resumen['Diferencia (Tienda - Plaza)'] = resumen['$Tienda'] - resumen['$PM']
-            resumen['Represent %'] = resumen.apply(
-                lambda r: (r['Diferencia (Tienda - Plaza)'] / r['$PM'])
-                if r['$PM'] != 0 else pd.NA,
-                axis=1
-            )
-
-            resumen = resumen[['PDM', '$PM', '$Tienda', 'Diferencia (Tienda - Plaza)', 'Represent %']]
-
-            suma_pm = resumen['$PM'].sum()
-
-            resumen = pd.concat([
-                resumen,
-                pd.DataFrame([[None]*5, [None]*5], columns=resumen.columns),
-                pd.DataFrame([{
-                    'PDM': 'Promedio',
-                    '$PM': suma_pm
-                }])
-            ], ignore_index=True)
-
+            suma_pm = resumen['$PM'].sum() if '$PM' in resumen.columns else 0
+            fila_promedio = pd.DataFrame([{'PDM': 'Promedio', '$PM': suma_pm}])
+            resumen = pd.concat([resumen, fila_promedio], ignore_index=True)
             resumen.to_excel(writer, sheet_name='Resumen PMD', index=False)
+            ws_res = writer.sheets['Resumen PMD']
+            ws_res.set_column('B:D', 18, num_fmt)
+            ws_res.set_column('E:E', 15, percent_fmt)
 
-            ws = writer.sheets['Resumen PMD']
-            ws.set_column('B:D', 18, num_fmt)
-            ws.set_column('E:E', 15, percent_fmt)
-
-            # =====================================================
-            # HOJA 2: PRECIOS SDDE 
-            # =====================================================
-            precios_sdde = df_limpio.pivot_table(
-                index='FECHA_DIA',
-                columns='PRODUCTO',
-                values='VENTA_PRECIO',
-                aggfunc='mean'
-            ).round(2)
-
-            precios_sdde.index.name = 'Fecha de aplicación (Fecha, hora y minuto)'
+            # HOJA 2: PRECIOS SDDE (AJUSTADA)
+            precios_sdde = df_limpio.pivot_table(index='FECHA_DIA', columns='PRODUCTO', values='VENTA_PRECIO', aggfunc='mean').round(0)
+            precios_sdde.index.name = 'Fecha de aplicación'
             precios_sdde.to_excel(writer, sheet_name='Precios SDDE')
+            ws_sdde = writer.sheets['Precios SDDE']
+            ws_sdde.set_column('A:A', 20)
+            ws_sdde.set_column('B:XFD', 12, num_fmt)
+            ws_sdde.freeze_panes(1, 1)
 
-            ws = writer.sheets['Precios SDDE']
-            ws.set_column('A:A', 35)
-            ws.set_column('B:XFD', 15, num_fmt)
+            # HOJAS POR PLAZA
+            plazas = df_limpio['PLAZA'].dropna().unique()
+            for plaza in plazas:
+                df_pla = df_limpio[(df_limpio['PLAZA'] == plaza) & (df_limpio['ES_CANASTA'].str.upper().isin(['SI', 'SÍ']))]
+                if df_pla.empty: continue
+                reporte = df_pla.pivot_table(index=['GRUPO_ALIMENTARIO', 'PRODUCTO'], columns='TIPO_PUNTO', values='VENTA_PRECIO', aggfunc='mean', fill_value=0).reset_index()
+                
+                nombre_pdm = str(plaza)
+                col_pdm_label = f"PDM {nombre_pdm}" if "PDM" not in nombre_pdm.upper() else nombre_pdm
+                reporte = reporte.rename(columns={'GRUPO_ALIMENTARIO': 'Grupo', 'PRODUCTO': 'Productos', 'plaza': col_pdm_label, 'externo': 'Tiendas'})
+                
+                if col_pdm_label in reporte.columns and 'Tiendas' in reporte.columns:
+                    reporte['Dif. Precio ($)'] = reporte['Tiendas'] - reporte[col_pdm_label]
+                    reporte['Dif. Porc. (%)'] = reporte.apply(lambda r: (r['Dif. Precio ($)'] / r[col_pdm_label]) if r[col_pdm_label] != 0 else 0, axis=1)
 
-            # =====================================================
-            # HOJAS POR LOCALIDAD 
-            # =====================================================
-            localidades = df_limpio['LOCALIDAD'].dropna().unique()
-
-            for localidad in localidades:
-                df_loc = df_limpio[
-                    (df_limpio['LOCALIDAD'] == localidad) &
-                    (df_limpio['ES_CANASTA'].str.upper().isin(['SI', 'SÍ']))
-                ]
-
-                if df_loc.empty:
-                    continue
-
-                reporte = df_loc.pivot_table(
-                    index=['GRUPO_ALIMENTARIO', 'PRODUCTO'],
-                    columns='TIPO_PUNTO',
-                    values='VENTA_PRECIO',
-                    aggfunc='mean',
-                    fill_value=0
-                ).reset_index()
-
-                col_pdm = f'PDM {localidad}'
-
-                reporte = reporte.rename(columns={
-                    'GRUPO_ALIMENTARIO': 'Grupo',
-                    'PRODUCTO': 'Productos',
-                    'plaza': col_pdm,
-                    'externo': 'Tiendas'
-                })
-
-                reporte['Dif. Precio ($)'] = reporte['Tiendas'] - reporte[col_pdm]
-                reporte['Dif. Porc. (%)'] = reporte.apply(
-                    lambda r: (r['Dif. Precio ($)'] / r[col_pdm])
-                    if r[col_pdm] != 0 else pd.NA,
-                    axis=1
-                )
-
-                reporte = reporte[['Grupo', 'Productos', col_pdm, 'Tiendas',
-                                   'Dif. Precio ($)', 'Dif. Porc. (%)']].round(2)
-
-                total_pdm = reporte[col_pdm].sum()
-                total_tiendas = reporte['Tiendas'].sum()
-
-                # Generamos el Excel
-                reporte.to_excel(writer, sheet_name=localidad, index=False)
-
-                ws = writer.sheets[localidad]
+                total_pdm = reporte[col_pdm_label].sum() if col_pdm_label in reporte.columns else 0
+                total_tiendas = reporte['Tiendas'].sum() if 'Tiendas' in reporte.columns else 0
+                sheet_name = str(plaza)[:31].replace(':', '').replace('/', '')
+                reporte.to_excel(writer, sheet_name=sheet_name, index=False)
+                ws = writer.sheets[sheet_name]
                 ws.set_column('A:B', 25)
                 ws.set_column('C:E', 15, num_fmt)
                 ws.set_column('F:F', 15, percent_fmt)
-
-                # --- CAMBIO APLICADO AQUÍ ---
-                # Calculamos el índice de la fila donde debe ir el total (después de los datos)
                 fila_total_idx = len(reporte) + 1 
-                
-                # Escribimos la fila de totales manualmente para controlar el rango del color
-                # Argumentos: write(fila, columna, contenido, formato)
-                ws.write(fila_total_idx, 1, 'Suma total', total_text_fmt) # Columna B
-                ws.write(fila_total_idx, 2, total_pdm, total_num_fmt)    # Columna C
-                ws.write(fila_total_idx, 3, total_tiendas, total_num_fmt)# Columna D
-                # -----------------------------
+                ws.write(fila_total_idx, 1, 'Suma total', total_text_fmt)
+                ws.write(fila_total_idx, 2, total_pdm, total_num_fmt)
+                ws.write(fila_total_idx, 3, total_tiendas, total_num_fmt)
 
         print("Archivo generado correctamente: Reporte_Comparativo.xlsx")
-
     except Exception as e:
         print("Error:", e)
 
