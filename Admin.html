@@ -46,50 +46,75 @@
 <script>
   const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwB6TPsLMgN6aBfQx9nWCmaXcV_8pnOwal2QceVvf_k54wGnsPVrts5Xjc_Pki2yhTr/exec";
 
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZ4Vrdv-uLE41_AEV4Q7SCTXTZKKOKenk3YukNaUPg0QCI4EbJZNXaQomGHm6Sp1XDNw/exec";
-const EXCEL_ID = "19QM8vpZLqTgDqpskqSsj2BeerjMguob8oHMfxTEH1dA";
+   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZ4Vrdv-uLE41_AEV4Q7SCTXTZKKOKenk3YukNaUPg0QCI4EbJZNXaQomGHm6Sp1XDNw/exec";
+    const EXCEL_ID = "19QM8vpZLqTgDqpskqSsj2BeerjMguob8oHMfxTEH1dA";
 
-let ventanaDescarga = null;
+    let ventanaDescarga = null;
 
-function ejecutarProceso() {
-  const estadoDiv = document.getElementById("estado");
-  const btn = document.getElementById("btnEjecutar");
+    function ejecutarProceso() {
+      const estadoDiv = document.getElementById("estado");
+      const btn = document.getElementById("btnEjecutar");
 
-  btn.disabled = true;
-  estadoDiv.textContent = "⏳ Proceso en ejecución...";
+      btn.disabled = true;
+      estadoDiv.textContent = "⏳ Proceso en ejecución...";
 
-  // ✅ ABRIR VENTANA EN EL CLICK (clave)
-  ventanaDescarga = window.open("", "_blank");
+      // ✅ Abrir ventana con mensaje, no en blanco
+      ventanaDescarga = window.open("", "_blank");
+      ventanaDescarga.document.write(`
+        <html>
+          <head>
+            <title>Generando Excel</title>
+            <style>
+              body {
+                font-family: Arial;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                height: 100vh;
+                background: #f5f5f5;
+              }
+            </style>
+          </head>
+          <body>
+            <h3>⏳ Generando el archivo Excel, por favor espera...</h3>
+          </body>
+        </html>
+      `);
 
-  fetch(SCRIPT_URL, { method: "POST" })
-    .then(() => esperarFinalizacion());
-}
+      fetch(SCRIPT_URL, { method: "POST" })
+        .then(() => esperarFinalizacion());
+    }
 
-function esperarFinalizacion() {
-  const intervalo = setInterval(() => {
-    fetch(SCRIPT_URL)
-      .then(res => res.text())
-      .then(estado => {
-        if (estado === "finalizado") {
-          clearInterval(intervalo);
+    function esperarFinalizacion() {
+      const intervalo = setInterval(() => {
+        fetch(SCRIPT_URL)
+          .then(res => res.text())
+          .then(estado => {
+            if (estado === "finalizado") {
+              clearInterval(intervalo);
 
-          document.getElementById("estado").textContent =
-            "✅ Proceso finalizado. Descargando Excel...";
+              document.getElementById("estado").textContent =
+                "✅ Proceso finalizado. Descargando Excel...";
 
-          descargarExcelAbast();
-          document.getElementById("btnEjecutar").disabled = false;
-        }
-      });
-  }, 3000);
-}
+              descargarExcelAbast();
+              document.getElementById("btnEjecutar").disabled = false;
+            }
+          });
+      }, 3000);
+    }
 
-function descargarExcelAbast() {
-  const url =
-    `https://docs.google.com/spreadsheets/d/${EXCEL_ID}/export?format=xlsx`;
+    function descargarExcelAbast() {
+      const url =
+        `https://docs.google.com/spreadsheets/d/${EXCEL_ID}/export?format=xlsx`;
 
-  // ✅ reutiliza la ventana ya autorizada
-  ventanaDescarga.location.href = url;
-}
+      // ✅ Reutiliza la ventana ya autorizada
+      ventanaDescarga.location.href = url;
+
+      // Cerrar ventana luego de iniciar descarga
+      setTimeout(() => {
+        ventanaDescarga.close();
+      }, 3000);
+    }
 
 function descargarExcel() {
   const url = "https://raw.githubusercontent.com/DarlingMartinez/Proyecto_Plazas_De_Mercado/main/Reporte_Comparativo.xlsx";
