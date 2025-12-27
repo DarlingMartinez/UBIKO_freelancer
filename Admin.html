@@ -49,12 +49,17 @@
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZ4Vrdv-uLE41_AEV4Q7SCTXTZKKOKenk3YukNaUPg0QCI4EbJZNXaQomGHm6Sp1XDNw/exec";
 const EXCEL_ID = "19QM8vpZLqTgDqpskqSsj2BeerjMguob8oHMfxTEH1dA";
 
+let ventanaDescarga = null;
+
 function ejecutarProceso() {
   const estadoDiv = document.getElementById("estado");
   const btn = document.getElementById("btnEjecutar");
 
   btn.disabled = true;
   estadoDiv.textContent = "⏳ Proceso en ejecución...";
+
+  // ✅ ABRIR VENTANA EN EL CLICK (clave)
+  ventanaDescarga = window.open("", "_blank");
 
   fetch(SCRIPT_URL, { method: "POST" })
     .then(() => esperarFinalizacion());
@@ -71,9 +76,7 @@ function esperarFinalizacion() {
           document.getElementById("estado").textContent =
             "✅ Proceso finalizado. Descargando Excel...";
 
-          // 🔽 DESCARGA AUTOMÁTICA
           descargarExcelAbast();
-
           document.getElementById("btnEjecutar").disabled = false;
         }
       });
@@ -84,52 +87,8 @@ function descargarExcelAbast() {
   const url =
     `https://docs.google.com/spreadsheets/d/${EXCEL_ID}/export?format=xlsx`;
 
-  const link = document.createElement("a");
-  link.href = url;
-  link.target = "_blank";
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
-
-  async function llamarGoogleScript(accion) {
-  const status = document.getElementById("status");
-  const loader = document.getElementById("loader");
-
-  status.innerText = "";
-  loader.style.display = "block";
-
-  let payload = {};
-  if (accion === 'run_python') {
-    payload = { action: "run_python" };
-  } else {
-    payload = { action: "insert", data: "Proceso iniciado" };
-  }
-
-  try {
-    await fetch(WEB_APP_URL, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    status.style.color = "green";
-    status.innerText = "Archivo en proceso de generación. Espera unos segundos...";
-
-    // ⏳ Esperar a que GitHub Actions termine
-    setTimeout(() => {
-      descargarExcel();
-      status.innerText = "Archivo generado y descargado.";
-    }, 15000); // 15 segundos (ajusta según tu proceso)
-
-  } catch (err) {
-    status.style.color = "red";
-    status.innerText = "Error al conectar con el servidor.";
-    console.error(err);
-  } finally {
-    loader.style.display = "none";
-  }
+  // ✅ reutiliza la ventana ya autorizada
+  ventanaDescarga.location.href = url;
 }
 
 function descargarExcel() {
