@@ -5,7 +5,7 @@ import time
 
 # --- CONFIGURACIÓN ---
 # ID de tu hoja de cálculo de Google Sheets (DEBE SER PÚBLICO)
-SHEET_ID = '1rryqAVgJBGBTNj_fGLfD4Gg_WWQjfPSe5WNWKGoGoYg' 
+SHEET_ID = '1j3l4u61zS44YfBPck5K7YLby1izFHMIxMZrHzhdXEU8' 
 SHEET_NAME = 'Hoja1' # Asegúrate que coincida con el nombre de tu pestaña
 URL = f'https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}&cache_buster={int(time.time())}'
 
