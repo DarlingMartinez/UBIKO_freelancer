@@ -1,10 +1,10 @@
 name: Procesar Encuestas Python
 
 on:
-  workflow_dispatch: # Permite ejecución manual desde API
+  workflow_dispatch: 
 
 permissions:
-  contents: write # Permiso para guardar los excel en el repo
+  contents: write 
 
 jobs:
   build:
