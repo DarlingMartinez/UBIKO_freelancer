@@ -3,10 +3,8 @@ import os
 import sys
 import time
 
-# --- CONFIGURACIÓN ---
-# ID de tu hoja de cálculo de Google Sheets (DEBE SER PÚBLICO)
 SHEET_ID = '1j3l4u61zS44YfBPck5K7YLby1izFHMIxMZrHzhdXEU8' 
-SHEET_NAME = 'Hoja1' # Asegúrate que coincida con el nombre de tu pestaña
+SHEET_NAME = 'Hoja1'
 URL = f'https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}&cache_buster={int(time.time())}'
 
 def generar_reportes_completos():
@@ -14,7 +12,6 @@ def generar_reportes_completos():
         print("Descargando datos...")
         df = pd.read_csv(URL)
 
-        # --- LIMPIEZA GENERAL ---
         df = df.fillna(0)
         df['VENTA_PRECIO'] = pd.to_numeric(df['VENTA_PRECIO'], errors='coerce').fillna(0)
 
@@ -24,7 +21,6 @@ def generar_reportes_completos():
             )
 
         if 'FECHA' in df.columns:
-            # dayfirst=True soluciona el Warning de formato de fecha
             df['FECHA'] = pd.to_datetime(df['FECHA'], dayfirst=True, errors='coerce')
             df['FECHA_DIA'] = df['FECHA'].dt.date
             df = df.dropna(subset=['FECHA'])
@@ -36,15 +32,12 @@ def generar_reportes_completos():
         with pd.ExcelWriter(output_file, engine='xlsxwriter') as writer:
             workbook = writer.book
             
-            # Formatos
             num_fmt = workbook.add_format({'num_format': '#,##0'})
             percent_fmt = workbook.add_format({'num_format': '0.00%'})
             total_text_fmt = workbook.add_format({'bg_color': '#E7E6E6', 'bold': True})
             total_num_fmt = workbook.add_format({'bg_color': '#E7E6E6', 'bold': True, 'num_format': '#,##0'})
 
-            # =====================================================
             # HOJA 1: RESUMEN PMD
-            # =====================================================
             resumen = df_limpio.pivot_table(
                 index='PLAZA', 
                 columns='TIPO_PUNTO', 
@@ -55,7 +48,6 @@ def generar_reportes_completos():
 
             resumen = resumen.rename(columns={'PLAZA': 'PDM', 'plaza': '$PM', 'externo': '$Tienda'})
             
-            # Asegurar que existan las columnas para cálculos
             for col in ['$PM', '$Tienda']:
                 if col not in resumen.columns: resumen[col] = 0
 
@@ -66,7 +58,6 @@ def generar_reportes_completos():
             
             resumen = resumen[['PDM', '$PM', '$Tienda', 'Diferencia (Tienda - Plaza)', 'Represent %']]
             
-            # Crear espacio de 2 filas y promedio sin Warnings
             vacias = pd.DataFrame([{c: None for c in resumen.columns}] * 2)
             promedio = pd.DataFrame([{
                 'PDM': 'Promedio', 
@@ -81,9 +72,7 @@ def generar_reportes_completos():
             ws_res.set_column('B:D', 18, num_fmt)
             ws_res.set_column('E:E', 15, percent_fmt)
 
-            # =====================================================
             # HOJA 2: PRECIOS SDDE
-            # =====================================================
             precios_sdde = df_limpio.pivot_table(
                 index='FECHA_DIA', 
                 columns='PRODUCTO', 
@@ -97,9 +86,7 @@ def generar_reportes_completos():
             ws_sdde.set_column('B:XFD', 12, num_fmt)
             ws_sdde.freeze_panes(1, 1)
 
-            # =====================================================
             # HOJAS POR PLAZA
-            # =====================================================
             plazas = df_limpio['PLAZA'].dropna().unique()
             
             for plaza in plazas:
@@ -117,7 +104,6 @@ def generar_reportes_completos():
                     fill_value=0
                 ).reset_index()
 
-                # Garantizar columnas de plaza y externo
                 if 'plaza' not in reporte.columns: reporte['plaza'] = 0
                 if 'externo' not in reporte.columns: reporte['externo'] = 0
 
@@ -136,7 +122,6 @@ def generar_reportes_completos():
                 
                 reporte = reporte[['Grupo', 'Productos', nombre_pdm, 'Tiendas', 'Dif. Precio ($)', 'Dif. Porc. (%)']].round(2)
 
-                # Nombre de hoja válido para Excel
                 sheet_name = str(plaza)[:31].replace(':', '').replace('/', '')
                 reporte.to_excel(writer, sheet_name=sheet_name, index=False)
                 
@@ -145,7 +130,6 @@ def generar_reportes_completos():
                 ws.set_column('C:E', 15, num_fmt)
                 ws.set_column('F:F', 15, percent_fmt)
                 
-                # Fila de totales con color limitado (B a D)
                 idx_total = len(reporte) + 1
                 ws.write(idx_total, 1, 'Suma total', total_text_fmt)
                 ws.write(idx_total, 2, reporte[nombre_pdm].sum(), total_num_fmt)
